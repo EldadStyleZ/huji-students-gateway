@@ -1,0 +1,374 @@
+{
+  "model": "keyword-baseline",
+  "synthetic": true,
+  "notProductionValidation": true,
+  "createdAt": "2026-09-10T11:18:41.945Z",
+  "summary": {
+    "count": 23,
+    "top1": 21,
+    "allExpectedInTop3": 21,
+    "modelResponses": 0,
+    "p50ms": 0,
+    "p95ms": 0
+  },
+  "byLanguage": {
+    "he": {
+      "count": 15,
+      "top1": 14,
+      "allExpectedInTop3": 14,
+      "modelResponses": 0,
+      "p50ms": 0,
+      "p95ms": 1
+    },
+    "en": {
+      "count": 6,
+      "top1": 5,
+      "allExpectedInTop3": 5,
+      "modelResponses": 0,
+      "p50ms": 0,
+      "p95ms": 0
+    },
+    "mixed": {
+      "count": 2,
+      "top1": 2,
+      "allExpectedInTop3": 2,
+      "modelResponses": 0,
+      "p50ms": 0,
+      "p95ms": 0
+    }
+  },
+  "results": [
+    {
+      "id": "he-01",
+      "lang": "he",
+      "expected": [
+        "course-registration"
+      ],
+      "suggested": [
+        "course-registration"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 1
+    },
+    {
+      "id": "he-02",
+      "lang": "he",
+      "expected": [
+        "exam-appeal"
+      ],
+      "suggested": [
+        "exam-appeal"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-03",
+      "lang": "he",
+      "expected": [
+        "reserve-support"
+      ],
+      "suggested": [
+        "reserve-support"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-04",
+      "lang": "he",
+      "expected": [
+        "tuition-payment"
+      ],
+      "suggested": [
+        "tuition-payment"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-05",
+      "lang": "he",
+      "expected": [
+        "scholarship"
+      ],
+      "suggested": [
+        "scholarship"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-06",
+      "lang": "he",
+      "expected": [
+        "housing"
+      ],
+      "suggested": [
+        "housing"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-07",
+      "lang": "he",
+      "expected": [
+        "accessibility"
+      ],
+      "suggested": [
+        "accessibility"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-08",
+      "lang": "he",
+      "expected": [
+        "events"
+      ],
+      "suggested": [
+        "events"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-09",
+      "lang": "he",
+      "expected": [
+        "initiatives"
+      ],
+      "suggested": [
+        "initiatives"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-10",
+      "lang": "he",
+      "expected": [
+        "academic-support"
+      ],
+      "suggested": [],
+      "method": "keywords",
+      "fallback": false,
+      "top1": false,
+      "covered": false,
+      "ms": 0
+    },
+    {
+      "id": "he-11",
+      "lang": "he",
+      "expected": [
+        "campus-services"
+      ],
+      "suggested": [
+        "campus-services"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "he-12",
+      "lang": "he",
+      "expected": [],
+      "suggested": [],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "en-01",
+      "lang": "en",
+      "expected": [
+        "course-registration"
+      ],
+      "suggested": [
+        "course-registration"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "en-02",
+      "lang": "en",
+      "expected": [
+        "exam-appeal"
+      ],
+      "suggested": [
+        "exam-appeal"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "en-03",
+      "lang": "en",
+      "expected": [
+        "scholarship"
+      ],
+      "suggested": [
+        "scholarship"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "en-04",
+      "lang": "en",
+      "expected": [
+        "housing"
+      ],
+      "suggested": [],
+      "method": "keywords",
+      "fallback": false,
+      "top1": false,
+      "covered": false,
+      "ms": 0
+    },
+    {
+      "id": "en-05",
+      "lang": "en",
+      "expected": [
+        "initiatives"
+      ],
+      "suggested": [
+        "initiatives"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "mixed-01",
+      "lang": "mixed",
+      "expected": [
+        "reserve-support",
+        "exam-appeal"
+      ],
+      "suggested": [
+        "exam-appeal",
+        "reserve-support"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "mixed-02",
+      "lang": "mixed",
+      "expected": [
+        "course-registration"
+      ],
+      "suggested": [
+        "course-registration"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "negation-01",
+      "lang": "he",
+      "expected": [
+        "course-registration"
+      ],
+      "suggested": [
+        "course-registration",
+        "tuition-payment"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "oos-01",
+      "lang": "he",
+      "expected": [],
+      "suggested": [],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "injection-01",
+      "lang": "en",
+      "expected": [],
+      "suggested": [],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    },
+    {
+      "id": "injection-02",
+      "lang": "he",
+      "expected": [
+        "housing"
+      ],
+      "suggested": [
+        "housing"
+      ],
+      "method": "keywords",
+      "fallback": false,
+      "top1": true,
+      "covered": true,
+      "ms": 0
+    }
+  ]
+}

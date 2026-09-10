@@ -1,0 +1,300 @@
+<!doctype html><html lang="en" dir="ltr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Student support gateway research</title><style>
+*{box-sizing:border-box}body{margin:0;color:#242724;background:#fff;font:16px/1.75 system-ui,-apple-system,sans-serif}header{border-bottom:1px solid #ddd;padding:20px 5%;font-size:13px}header a{color:#333}a{color:#235447;text-underline-offset:3px}main{max-width:1250px;margin:50px auto;display:grid;grid-template-columns:215px minmax(0,850px);gap:65px;padding:0 30px}aside{font-size:12px;position:sticky;top:25px;align-self:start}aside strong{display:block;margin-bottom:12px}aside a{display:block;margin-bottom:12px;text-decoration:none;color:#555;line-height:1.5}h1{font-size:40px;line-height:1.2;letter-spacing:-1.2px;font-weight:650;margin:0 0 50px}h2{font-size:26px;line-height:1.4;font-weight:600;margin:52px 0 22px;padding-top:20px;border-top:1px solid #ddd}p{margin:0 0 19px}table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.65;margin:27px 0}th,td{border:1px solid #d7dad7;padding:13px;text-align:left;vertical-align:top}th{background:#f0f2ef;font-weight:600}td:first-child{min-width:135px}code{font-size:.9em;background:#f1f2ef;padding:2px 4px;overflow-wrap:anywhere}li{margin-bottom:10px}article{min-width:0}article>ol:last-child{font-size:13px;padding-left:23px}.note{color:#555;font-size:12px;margin-bottom:24px}@media(max-width:900px){main{display:block;margin:25px auto;padding:0 20px}aside{position:static;border-bottom:1px solid #ddd;margin-bottom:30px;padding-bottom:15px}aside a{display:inline-block;margin:4px 15px 4px 0}h1{font-size:32px}table{display:block;overflow-x:auto}h2{font-size:23px}}@media print{header,aside{display:none}main{display:block;margin:0;padding:0}body{font-size:10pt;line-height:1.5}h1{font-size:24pt}h2{break-after:avoid;font-size:16pt}tr{break-inside:avoid}table{font-size:9pt}a{color:inherit}}
+</style></head><body><header><a href="/">← Student gateway</a></header><main><aside><strong>Contents</strong><a href="#section-1">Recommendation</a><a href="#section-2">Production precedents</a><a href="#section-3">Hebrew University context and limits</a><a href="#section-4">Student experience</a><a href="#section-5">Routing and directory design</a><a href="#section-6">Natural-language routing and model selection</a><a href="#section-7">Backend and delivery</a><a href="#section-8">Authentication, privacy and operations</a><a href="#section-9">Implementation sequence and acceptance criteria</a><a href="#section-10">What the codebase contains</a><a href="#section-11">Sources</a></aside><article><h1>Student support gateway for the Hebrew University Student Union</h1>
+<h2 id="section-1">Recommendation</h2>
+<p>Build a short, bilingual service portal with two equivalent entry points: choosing an issue and describing it in natural language. Both should enter the same maintained routing system. Show the proposed recipient and the reason for the recommendation before collecting a full request. For university-owned problems, distinguish the office that can act from the union team that can help the student navigate or escalate the issue.</p>
+<p>The most important asset is an approved service directory: which team handles which problem, on which campus, with what exceptions. A list of job titles and emails is the starting point, but it cannot reliably answer those questions by itself. AI should classify the problem into that directory’s taxonomy. It should never invent an email address, determine a student’s financial status, or decide whether the student deserves assistance.</p>
+<p>Use Supabase for Postgres and email authentication, and Railway for the web service and a separate email worker. This suits a programmer already familiar with those services and keeps the first version in one repository. Railway documents persistent web services and background workers; Supabase provides passwordless email authentication. This is an architectural recommendation, not a claim that these vendors are uniquely necessary. <a href="https://docs.railway.com/build-deploy">1</a>, <a href="https://supabase.com/docs/guides/auth/auth-email-passwordless">2</a></p>
+<p>The accompanying codebase implements this foundation with plain JavaScript modules, a Node server, a Supabase migration, an email adapter, and an optional self-hosted model adapter. It starts in a clearly labelled demo mode. It is a starter for further development; the launch work described below remains necessary.</p>
+<h2 id="section-2">Production precedents</h2>
+<p>The evidence includes product documentation and vendor-published university case studies. Product documentation establishes supported mechanisms. Case-study results are reported by the vendor and customer, are not independently audited here, and should not be used as forecasts for the student union.</p>
+<table>
+<thead>
+<tr>
+<th>System or deployment</th>
+<th>Documented approach</th>
+<th>What to adopt here</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Jira Service Management</td>
+<td>Forms conditionally show or hide sections based on earlier answers. Fields can be grouped and previewed before publication.</td>
+<td>Ask follow-up questions only when an answer changes the destination or next action. <a href="https://support.atlassian.com/jira-service-management-cloud/docs/create-or-edit-a-form/">3</a></td>
+</tr>
+<tr>
+<td>ServiceNow Guided Self-Service</td>
+<td>A visual question-and-answer flow guides people to knowledge articles or catalog forms; users can revisit choices.</td>
+<td>Support both an informational handoff and a request form, with an obvious way to go back. <a href="https://www.servicenow.com/docs/r/employee-service-management/employee-experience-foundation/gss-guided-self-service-homepage.html">4</a></td>
+</tr>
+<tr>
+<td>Zendesk intelligent triage</td>
+<td>Incoming messages are classified by topic, language and other attributes; classifications can drive workflows and be corrected.</td>
+<td>Treat classification as a suggestion with an override and record the correction separately from the original prediction. <a href="https://support.zendesk.com/hc/en-us/articles/4964463770650-About-intelligent-triage">5</a>, <a href="https://support.zendesk.com/hc/en-us/articles/4685355428250-Viewing-intelligent-triage-classifications-in-tickets">6</a></td>
+</tr>
+<tr>
+<td>Intercom Workflows</td>
+<td>Data collection, branching and team assignment are composed into workflows; the first matching branch takes precedence.</td>
+<td>Define explicit rule priority and test overlapping rules rather than relying on incidental ordering. <a href="https://www.intercom.com/help/en/articles/6611595-using-the-workflows-builder">7</a></td>
+</tr>
+<tr>
+<td>Western Sydney University</td>
+<td>Service portals consolidated inquiries that previously passed through email and forms. The case study describes plans to retire more than 32 shared addresses and estimates a 40% reduction in forms.</td>
+<td>Consolidate the entry point and the underlying services, not just the visual appearance of the existing email directory. <a href="https://www.servicenow.com/uk/customers/western-sydney-university.html">8</a></td>
+</tr>
+<tr>
+<td>Georgian College</td>
+<td>The case study reports portal access to 95% of student services, including registration, finance and housing, alongside changes to service governance.</td>
+<td>Assign service owners and expectations as part of implementation. A portal alone cannot create accountability. <a href="https://www.servicenow.com/uk/customers/georgian-college.html">9</a></td>
+</tr>
+</tbody></table>
+<p>For this union, buying an enterprise platform is worth considering if the university already operates one and will provide an appropriately isolated queue. Otherwise, a custom intake experience connected to an existing helpdesk may be easier to maintain than a new complete helpdesk. The supplied code uses email forwarding as the first delivery adapter; it does not attempt to reproduce the full agent workspaces of these products.</p>
+<h2 id="section-3">Hebrew University context and limits</h2>
+<p>The union’s public Givat Ram contact page distinguishes academic coordination, academic assistance, welfare, reserve service and other functions, and provides campus-specific addresses. That is evidence that campus and service distinctions matter. It is not sufficient evidence to map every individual problem to a particular mailbox. The page reports an update on 5 June 2026. <a href="https://www.aguda.org.il/articles/contact-us-givat-ram">10</a></p>
+<p>The university’s registration guidance states that course registration for admitted bachelor’s and master’s students becomes available after receipt of the advance payment. That is a specific prerequisite for a described population. It does not establish a universal rule that all historical balances must be zero, or that every course-registration problem should go to one central administrative office. <a href="https://info.huji.ac.il/registration-process/steps">11</a></p>
+<p>The available study regulations also describe situations requiring departmental approval, including taking certain courses outside the student’s program. These regulations are an older, 2025 document and must be checked against the applicable academic year before being operationalized. The current public guidance supports separating financial, administrative and academic issues; it does not justify an exhaustive automated decision tree without the departments’ review. <a href="https://studentsadmin.huji.ac.il/sites/default/files/minhalt/files/takanon2025.pdf">12</a></p>
+<p>Therefore, ask what the system reports before asking a student to interpret university bureaucracy. Examples include a payment block, inactive study registration, a particular course or approval problem, a technical error, and “I’m not sure.” Do not ask for payment receipts, years of debt, bank details or identification documents merely to select a contact.</p>
+<p>Some routes depend on faculty or department rather than campus. In the initial code, university handoffs remain general information links; they are not falsely presented as the exact department’s contact. Add the approved department directory before enabling direct departmental handoffs. Union representatives should review examples where administration can execute a decision but a program adviser or academic committee must approve it.</p>
+<h2 id="section-4">Student experience</h2>
+<p>Start with six broad, student-friendly groups: studies and academics; tuition and scholarships; wellbeing and campus life; reserve service; culture and community; and something else. These are proposed labels to test, not the union’s approved organizational structure. Keep detailed role titles out of the first choice: students know their problem better than they know the organization chart.</p>
+<p>The desktop interface can use a row of categories or selectable cards. On mobile, use full-width choices with a short explanation. A dropdown works for a long department list, but an initial dropdown hides the available kinds of help. Do not require a multi-level hover menu or a chatbot conversation to obtain assistance.</p>
+<p>The recommended path is: choose or describe the problem; answer the few relevant routing questions; see the destination; optionally prepare and submit a request. A student who only needs the right university contact can leave at the destination step without creating a ticket or giving an email address. A student who already typed a description should not be asked to write it again.</p>
+<p>GOV.UK recommends documenting why each question is needed, using branching, and starting with one decision per page, then using research to determine where related questions can be combined. The practical application here is to combine a campus question and one short registration question on a compact context screen, then test whether splitting them helps mobile users. Do not manufacture ten pages to follow the pattern mechanically. <a href="https://www.gov.uk/service-manual/design/form-structure">13</a></p>
+<table>
+<thead>
+<tr>
+<th>Information</th>
+<th>When to ask</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Topic</td>
+<td>Always, chosen or confirmed from a suggestion</td>
+<td>Select the service</td>
+</tr>
+<tr>
+<td>Campus</td>
+<td>When selecting a union recipient</td>
+<td>Resolve campus ownership; allow “not sure”</td>
+</tr>
+<tr>
+<td>Registration symptom</td>
+<td>Only for registration issues</td>
+<td>Distinguish the next appropriate office</td>
+</tr>
+<tr>
+<td>Faculty / department</td>
+<td>When it changes the university recipient</td>
+<td>Resolve the exact administrative office</td>
+</tr>
+<tr>
+<td>Short issue description</td>
+<td>When preparing a request</td>
+<td>Tell the recipient what happened and the desired outcome</td>
+</tr>
+<tr>
+<td>Reply email</td>
+<td>When submitting a request</td>
+<td>Provide a verified return channel</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>Optional unless a specific service requires it</td>
+<td>Personalize the response</td>
+</tr>
+<tr>
+<td>Attachments</td>
+<td>Later, for a defined operational need</td>
+<td>Avoid unnecessary initial effort and sensitive uploads</td>
+</tr>
+</tbody></table>
+<p>A provisional usability target is a median of no more than 90 seconds from entry to submission for a straightforward case, and a faster path for contact-only guidance. This is a design target, not a published benchmark or a measured result from this prototype. Measure it with representative students before publishing any completion-time promise.</p>
+<p>Show a plain explanation such as “You selected a payment block, so start with the tuition office to clarify that block. The union can help you navigate the process.” Avoid asserting the student owes money, demanding proof of payment, or preventing union contact because the student’s registration is inactive.</p>
+<p>W3C recommends visible labels, logical form groups, progress information for longer flows, and feedback that helps people recover from errors. Preserve answers when users go back, allow optional steps to be skipped, and avoid unnecessary time limits. <a href="https://www.w3.org/WAI/tutorials/forms/multi-page/">14</a>, <a href="https://www.w3.org/WAI/tutorials/forms/labels/">15</a></p>
+<p>Use Hebrew as the default with real RTL layout, not only right-aligned text. Keep email addresses and codes in an LTR context. Use keyboard-operable controls, visible focus, inline instructions and error messages, and test with screen readers and zoom. The starter has semantic labels, radio groups, focus management and responsive layouts, but it has not received a formal accessibility certification. W3C’s positioning guidance explicitly covers RTL label relationships. <a href="https://www.w3.org/WAI/WCAG21/Techniques/general/G162">16</a></p>
+<h2 id="section-5">Routing and directory design</h2>
+<p>Maintain three distinct concepts: the student’s issue, the service responsible for it, and the current contact for that service. A representative may change each year while the service remains stable. Prefer role mailboxes over personal mailboxes where the organization can support that arrangement.</p>
+<p>Each approved directory record should contain a stable identifier, Hebrew and English display names, the responsible role, mailbox, topic scope, campus scope, approval owner and expiry/review date. Extend it with department, degree level, fallback recipient, availability and sensitivity restrictions when these actually affect routing. Do not collect all of those dimensions from every student.</p>
+<p>The code’s directory rejects unknown scopes and approved placeholder addresses. Only approved, unexpired entries are eligible. More specific topic/campus matches outrank broad entries. Equal-priority matches fail for correction rather than selecting a recipient arbitrarily. An approved, current general-triage contact is required before live intake starts.</p>
+<p>When the recipient changes between preview and submission, the server requires another review. A retry of an already saved request returns the original receipt. The directory version and selected recipient are saved with the ticket so later changes do not silently rewrite its history.</p>
+<p>For a larger taxonomy, maintain a decision table rather than hand-editing nested conditionals. A useful rule record includes conditions, outcome, priority, effective dates, explanation, authority source, approver and regression examples. Evaluate conflicting and missing rules as part of publication. Introduce a visual editor after the content model stabilizes; implementing one at the beginning adds work without solving unclear responsibility.</p>
+<p>Shareable announcement links should contain only a stable topic slug, such as <code>/?topic=course-registration&amp;lang=he</code>. The landing page can preselect the issue while still allowing correction. Never put a student’s free text, email, financial situation or a private ticket access token in a public campaign URL.</p>
+<h2 id="section-6">Natural-language routing and model selection</h2>
+<p>Natural-language routing is a constrained classification problem. A good output is a short list of approved topic identifiers and an abstention flag. The model does not need access to live mailboxes, the student information system, payment records or general web browsing. It does not need permission to send email.</p>
+<p>Start by comparing an explainable keyword baseline, multilingual semantic retrieval, and a small instruction model. An embedding model can retrieve service descriptions and example requests without generating prose. A classifier can handle more varied phrasing and negation, but increases serving complexity. Neither method is automatically reliable just because its model card says “multilingual.”</p>
+<table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>Evidence and characteristics</th>
+<th>Recommended use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>intfloat/multilingual-e5-base</code></td>
+<td>Published model card and multilingual E5 research; MIT licence in the model card. It is an embedding model, so it ranks text similarity rather than generating a response.</td>
+<td>A strong compact retrieval baseline to evaluate on Hebrew service descriptions and examples. Apply the model’s documented query/passage formatting. <a href="https://huggingface.co/intfloat/multilingual-e5-base">17</a>, <a href="https://arxiv.org/abs/2402.05672">18</a></td>
+</tr>
+<tr>
+<td>Gemma 4 E2B / E4B</td>
+<td>Google documents Apache 2.0 release and multilingual training. Effective parameter counts differ from total stored parameters; E4B is not simply a four-billion-parameter memory footprint.</td>
+<td>Test a smaller Gemma deployment first if the local evaluation set is satisfactory and serving resources are limited. <a href="https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/">19</a>, <a href="https://huggingface.co/google/gemma-4-E4B-it">20</a></td>
+</tr>
+<tr>
+<td>Gemma 4 12B / 26B</td>
+<td>Current Gemma documentation includes these larger variants. A <code>gemma4:26b</code> Ollama model was available locally for the supplied synthetic test.</td>
+<td>Use the installed model for development; do not assume its hardware footprint or latency is appropriate for public deployment. <a href="https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemma-4-12b/">21</a></td>
+</tr>
+<tr>
+<td><code>Qwen/Qwen3-4B</code></td>
+<td>Published Apache 2.0 model card, 4.0B parameters, multilingual support and configurable thinking. This is a compact comparison candidate, not a claim that it is the latest Qwen release.</td>
+<td>Evaluate as a second instruction-model baseline using the same examples and serving budget. <a href="https://huggingface.co/Qwen/Qwen3-4B">22</a></td>
+</tr>
+<tr>
+<td>Commercial helpdesk classification</td>
+<td>Zendesk’s product-specific language table includes Hebrew for topic and sentiment classification. That does not imply every AI feature supports Hebrew identically.</td>
+<td>Consider when an existing helpdesk contract removes substantial integration work; verify feature entitlements and Hebrew quality in a trial. <a href="https://support.zendesk.com/hc/en-us/articles/4408821324826-Zendesk-language-support-by-product">23</a></td>
+</tr>
+</tbody></table>
+<p>A sensible sequence is to establish the keyword baseline, evaluate multilingual E5 on an approved catalog, and compare Gemma against the same labelled examples. Choose the simplest option that meets routing quality and response-time targets. Fine-tuning is premature before there is a stable taxonomy and enough reviewed examples to distinguish model mistakes from unclear ownership.</p>
+<p>The code supports both an OpenAI-compatible chat endpoint and Ollama’s native chat API. The native path requests a JSON schema and disables thinking for the tested Gemma configuration. All returned IDs are validated, duplicate IDs are normalized, unknown IDs are rejected, and failures fall back to keywords. Ollama documents schema-based structured outputs and the native <code>think</code> setting. Server compatibility still needs validation for a different model or host. <a href="https://docs.ollama.com/capabilities/structured-outputs">24</a>, <a href="https://docs.ollama.com/api/chat">25</a></p>
+<p>The model’s self-reported confidence is not a calibrated probability. The starter deliberately does not display percentages. In a future evaluated system, use measured acceptance thresholds, an abstention policy and the gap between plausible candidates. A high aggregate score is insufficient if the model misroutes sensitive cases or consistently fails on a particular language or campus.</p>
+<p>The included evaluation file contains 23 authored synthetic examples covering Hebrew, English, mixed language, unclear requests, negation, multiple issues and attempted instruction injection. It is useful for checking the integration and reproducing failures. It is not a held-out production benchmark, and the examples overlap the design of the taxonomy. Exact run results are recorded in the evaluation JSON artifacts and the validation note.</p>
+<p>The local experiment showed a real integration risk: the initial OpenAI-compatible invocation did not produce validated predictions under the chosen output budget, while the native structured-output configuration did. A system that only reports its final topic would have concealed this by counting fallback results as AI successes. The evaluator records the method and fallback status for every example.</p>
+<p>Before a pilot, assemble a de-identified, independently labelled evaluation set from real inquiries with permission to use them. Include common and rare topics, typos, slang, Hebrew prefixes, English, mixed scripts, negation, multiple departments and requests that should remain unclassified. Have a second person adjudicate ambiguous ownership. Reserve an untouched test split. Measure top-one correctness, coverage within the suggestions, unnecessary suggestions, abstention quality, per-topic recall, sensitive-route errors and p95 latency under expected concurrency.</p>
+<p>OWASP describes prompt injection as a risk when untrusted text is treated as instructions, and recommends least privilege and output validation among the defenses. The architectural control here is stronger than wording alone: the model has no action tools and its output cannot create a new recipient. Basic email/number redaction reduces obvious identifiers, but it is not complete anonymization and does not remove all sensitive narrative details. <a href="https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html">26</a></p>
+<h2 id="section-7">Backend and delivery</h2>
+<p>The recommended service boundary is a single web application and API, one Postgres database, and an independent delivery worker. Keep model inference behind a server-side adapter. For a small catalog, no separate vector database is needed initially; an embedding experiment can rank a small in-memory catalog or later use Postgres vector search if justified.</p>
+<p>The database transaction inserts the ticket and an outbox row together. The request is accepted when that transaction commits. The worker separately claims an outbox job, attempts delivery and records its outcome. This avoids the dual-write problem where a ticket is saved but its notification disappears, or a notification is sent for a ticket that never committed. AWS documents the transactional outbox pattern and the need to handle duplicates. <a href="https://docs.aws.amazon.com/en_en/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html">27</a></p>
+<p>The starter uses job leases, fenced acknowledgements and bounded exponential retries. It passes the same provider idempotency key and frozen payload on retries. Resend retains idempotency keys for 24 hours; therefore the worker stops automatic retries before that boundary after an uncertain initial attempt. An operator must reconcile a failed or expired job instead of blindly creating a new key and risking a duplicate message. <a href="https://resend.com/docs/dashboard/emails/idempotency-keys">28</a></p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>What it means to the student</th>
+<th>What it does not establish</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Received</td>
+<td>The request was saved</td>
+<td>The recipient has read it</td>
+</tr>
+<tr>
+<td>Email queued</td>
+<td>Delivery work is pending or retrying</td>
+<td>The recipient’s server has accepted it</td>
+</tr>
+<tr>
+<td>Provider accepted</td>
+<td>The email service accepted the send</td>
+<td>Delivery to an inbox, reading or resolution</td>
+</tr>
+<tr>
+<td>Email failed</td>
+<td>Delivery needs operator attention; the ticket still exists</td>
+<td>The student should submit duplicate requests</td>
+</tr>
+<tr>
+<td>Resolved</td>
+<td>A responsible person has recorded resolution</td>
+<td>Something that can be inferred from sending an email</td>
+</tr>
+</tbody></table>
+<p>Delivery events and bounces are separate from API acceptance. For example, SES distinguishes sending, delivery to a recipient’s mail server, bounces, complaints and delays. The starter does not implement signed provider webhooks or inbox read tracking and does not claim to do so. Add delivery-event processing or use a helpdesk integration before promising richer delivery status. <a href="https://docs.aws.amazon.com/ses/latest/dg/monitor-using-event-publishing.html">29</a></p>
+<p>Staff can initially reply to the verified student address from the role mailbox. That keeps adoption simple, but replies made there do not automatically update this database. A subsequent phase should connect an existing helpdesk or implement a staff workspace with assignment, transfers, internal notes, reply ingestion and explicit closure. Do not put “waiting for student” or “resolved” on the portal unless that state comes from an actual recorded action.</p>
+<h2 id="section-8">Authentication, privacy and operations</h2>
+<p>Allow anonymous browsing and topic selection. Verify the reply address only when a student decides to send. The live starter uses Supabase email OTP and an HttpOnly, Secure, SameSite cookie; ticket ownership comes from Supabase’s verified user response. The API never accepts a requester ID or destination email supplied by the browser. Supabase’s OTP method sends a magic link by default unless the email template is configured to include the token, so that template configuration is part of setup. <a href="https://supabase.com/docs/reference/javascript/auth-signinwithotp">30</a>, <a href="https://supabase.com/docs/reference/javascript/auth-verifyotp">31</a></p>
+<p>The migration enables row-level security and revokes direct table and administrative RPC access from public browser roles. The server’s service credential remains server-side. Because that credential is privileged, ownership checks must remain explicit in every API and RPC path. The starter includes tests that a different student cannot retrieve a ticket and that browser roles cannot execute the administrative creation function.</p>
+<p>Use separate staging and production projects, restricted administrator access, managed secrets, backups and restore drills. Do not put request text into URLs, analytics events, error messages or model telemetry. Rate-limit OTP attempts and intake, and add edge-level abuse controls before public exposure; the code deliberately does not trust arbitrary forwarded-IP headers. Global limits protect costs but need tuning so many students behind a university NAT are not blocked together.</p>
+<p>The union should decide and document the legal basis, purpose, recipients and retention period for this service with the responsible privacy adviser. Israel’s Amendment 13 entered into force on 14 August 2025, and the Privacy Protection Authority explains that exemption from database registration does not remove other obligations. This project should be reviewed under the applicable Israeli framework rather than assuming GDPR is the only relevant law. This report is a product and engineering assessment, not a determination of the union’s legal obligations. <a href="https://main.knesset.gov.il/Activity/Legislation/Laws/pages/lawbill.aspx?lawitemid=2167975&amp;t=lawsuggestionssearch">32</a>, <a href="https://www.gov.il/he/pages/tikun13_qa?chapterIndex=6">33</a></p>
+<p>For disability, harassment, health or other sensitive disclosures, design dedicated restricted routes before enabling broad automatic forwarding. A fallback triage team is useful, but should not automatically receive every category of sensitive report. The initial general categories are illustrative; operational owners must decide where a restricted service or direct external contact is required. Do not train on these messages by default.</p>
+<p>A privacy notice, approved retention and deletion procedures, monitored failed-mail queue, directory review process, accessibility review and agreed staff coverage are launch requirements. The supplied consent text explains the immediate sharing action, but it is not a complete organizational privacy notice. Email copies are additional retained records and must be considered alongside the database.</p>
+<h2 id="section-9">Implementation sequence and acceptance criteria</h2>
+<p>First, run a routing workshop with representatives of the main campuses. For each frequent issue, record the first responsible university office, the union support owner, exceptions, required facts and escalation path. Review anonymized examples, not only abstract role descriptions. Give one operational owner responsibility for maintaining the directory and another person responsibility for approving changes.</p>
+<p>Next, pilot guided routing for a small set of common issues and one campus. Observe students using mobile devices, including students unfamiliar with union roles. Track abandonment by step, requests sent to the wrong team, time to the first useful response and requests that require the student to repeat information. Do not treat a reduction in submitted tickets alone as success; students may simply be giving up.</p>
+<p>Then enable natural-language suggestions in a limited pilot after offline evaluation. Compare the suggested topic with the student’s confirmed topic and the final staff-owned topic. Keep those as separate fields. A student accepting a suggestion is weak evidence of correctness; the staff outcome is stronger, though it too requires review.</p>
+<table>
+<thead>
+<tr>
+<th>Release gate</th>
+<th>Evidence required</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Routing</td>
+<td>Every enabled route has an approved owner, current contact, explanation and fallback; overlaps and gaps are tested</td>
+</tr>
+<tr>
+<td>Student effort</td>
+<td>Representative students can complete common paths; unnecessary questions are removed based on observation</td>
+</tr>
+<tr>
+<td>Ticket reliability</td>
+<td>Commit/outbox atomicity, duplicate submission, crash recovery and delivery failure are tested</td>
+</tr>
+<tr>
+<td>Identity and access</td>
+<td>Ownership checks, staff authorization and session expiry are tested without exposing private tickets</td>
+</tr>
+<tr>
+<td>Language and accessibility</td>
+<td>Hebrew, English, RTL, keyboard, zoom, mobile and screen-reader testing</td>
+</tr>
+<tr>
+<td>AI suggestions</td>
+<td>Independent labelled examples, subgroup results, abstention and invalid-output behaviour, measured concurrency/latency</td>
+</tr>
+<tr>
+<td>Operations</td>
+<td>Named monitoring owner, backup/restore practice, delivery-failure runbook, support schedule and directory renewal</td>
+</tr>
+<tr>
+<td>Privacy</td>
+<td>Organizational notice, retention, access policy, model processing terms and sensitive-topic handling approved</td>
+</tr>
+</tbody></table>
+<p>Track completion rate with a denominator that includes abandoned attempts, median and p90 form time, first-destination acceptance, reassignment rate, time to first meaningful response, aged unassigned requests, email failures and student-rated routing usefulness. Record operational metadata without storing the student’s full text in analytics. Segment enough to detect poor service across campuses and languages without reporting identifying small groups.</p>
+<p>Budget by the actual operating model: database/authentication, web service, worker, email volume, observability, and model-serving time or hardware. Open weights remove a licence charge in some cases; they do not remove inference cost or maintenance. A continuously running 26B model is unlikely to be the first economical choice for sparse traffic. Obtain current quotes and run a concurrency test once the expected request volume and hardware are known.</p>
+<h2 id="section-10">What the codebase contains</h2>
+<p>Implemented: a responsive Hebrew/English student interface; guided topic routing; preserved descriptions; topic links; an explicit general-help path; keyword suggestions; optional validated model classification; reviewed recipient binding; OTP API integration; authenticated ticket creation and lookup; Postgres transactional outbox; an idempotent email worker; tests and a synthetic model evaluator.</p>
+<p>Not yet implemented: a complete staff case-management interface; staff reply ingestion; signed delivery webhooks; automated retention/deletion; organizational SSO; fine-grained sensitive-service access policies; a directory editor; exact university department resolution; model accuracy certification; production observability and a full accessibility audit. External Supabase, authentication and email delivery require credentials and staging verification. No real student messages were sent as part of this build.</p>
+<p>The next input needed is the role list plus responsibility examples. The supplied CSV template adds the scope, owner and review information that turns that list into an operational directory. Keep live intake disabled until the directory and privacy/operational setup are approved.</p>
+<h2 id="section-11">Sources</h2>
+<p>Sources were accessed on 10 September 2026. Documentation is generally undated and may change. Dates below are publication or update dates only when explicitly available; none of the vendor case studies are independent controlled experiments.</p>
+<ol>
+<li>Railway. <a href="https://docs.railway.com/build-deploy">Build &amp; Deploy</a>. Current documentation; accessed 10 September 2026.</li>
+<li>Supabase. <a href="https://supabase.com/docs/guides/auth/auth-email-passwordless">Passwordless email logins</a>. Current documentation; accessed 10 September 2026.</li>
+<li>Atlassian. <a href="https://support.atlassian.com/jira-service-management-cloud/docs/create-or-edit-a-form/">Create or edit a form</a>. Current Jira Service Management Cloud documentation.</li>
+<li>ServiceNow. <a href="https://www.servicenow.com/docs/r/employee-service-management/employee-experience-foundation/gss-guided-self-service-homepage.html">Use Guided Self-Service</a>. Australia release; updated 12 March 2026.</li>
+<li>Zendesk. <a href="https://support.zendesk.com/hc/en-us/articles/4964463770650-About-intelligent-triage">About intelligent triage</a>. Updated 7 July 2026.</li>
+<li>Zendesk. <a href="https://support.zendesk.com/hc/en-us/articles/4685355428250-Viewing-intelligent-triage-classifications-in-tickets">Viewing intelligent triage classifications in tickets</a>. Current product documentation.</li>
+<li>Intercom. <a href="https://www.intercom.com/help/en/articles/6611595-using-the-workflows-builder">Using the Workflows builder</a>. Current product documentation.</li>
+<li>ServiceNow. <a href="https://www.servicenow.com/uk/customers/western-sydney-university.html">Western Sydney University customer story</a>. Undated vendor case study.</li>
+<li>ServiceNow. <a href="https://www.servicenow.com/uk/customers/georgian-college.html">Georgian College customer story</a>. Undated vendor case study.</li>
+<li>Hebrew University Student Union. <a href="https://www.aguda.org.il/articles/contact-us-givat-ram">Givat Ram contacts</a>. Page updated 5 June 2026.</li>
+<li>Hebrew University. <a href="https://info.huji.ac.il/registration-process/steps">Registration process: next steps</a>. Current public guidance.</li>
+<li>Hebrew University, Student Administration. <a href="https://studentsadmin.huji.ac.il/sites/default/files/minhalt/files/takanon2025.pdf">Study regulations, 2025</a>. Older regulation source; academic-year applicability requires review.</li>
+<li>GOV.UK Service Manual. <a href="https://www.gov.uk/service-manual/design/form-structure">Structuring forms</a>. Current design guidance; originally published 2016.</li>
+<li>W3C WAI. <a href="https://www.w3.org/WAI/tutorials/forms/multi-page/">Multi-page Forms</a>. Updated 27 July 2019.</li>
+<li>W3C WAI. <a href="https://www.w3.org/WAI/tutorials/forms/labels/">Labeling Controls</a>. Current forms tutorial.</li>
+<li>W3C. <a href="https://www.w3.org/WAI/WCAG21/Techniques/general/G162">G162: Positioning labels to maximize predictability of relationships</a>. Current technique documentation.</li>
+<li>Liang Wang / intfloat. <a href="https://huggingface.co/intfloat/multilingual-e5-base">multilingual-e5-base model card</a>. Model source and licence.</li>
+<li>Liang Wang et al. <a href="https://arxiv.org/abs/2402.05672">Multilingual E5 Text Embeddings: A Technical Report</a>. 8 February 2024.</li>
+<li>Google DeepMind. <a href="https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/">Gemma 4: Byte for byte, the most capable open models</a>. 2 April 2026.</li>
+<li>Google DeepMind. <a href="https://huggingface.co/google/gemma-4-E4B-it">gemma-4-E4B-it model card</a>. Current model architecture and licence information.</li>
+<li>Google DeepMind. <a href="https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemma-4-12b/">Introducing Gemma 4 12B</a>. 3 June 2026.</li>
+<li>Qwen. <a href="https://huggingface.co/Qwen/Qwen3-4B">Qwen3-4B model card</a>. Model configuration, licence and deployment guidance.</li>
+<li>Zendesk. <a href="https://support.zendesk.com/hc/en-us/articles/4408821324826-Zendesk-language-support-by-product">Language support by product</a>. Current feature-specific language table.</li>
+<li>Ollama. <a href="https://docs.ollama.com/capabilities/structured-outputs">Structured Outputs</a>. Current documentation.</li>
+<li>Ollama. <a href="https://docs.ollama.com/api/chat">Generate a chat message</a>. Native API schema.</li>
+<li>OWASP. <a href="https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html">LLM Prompt Injection Prevention Cheat Sheet</a>. Current security guidance.</li>
+<li>AWS. <a href="https://docs.aws.amazon.com/en_en/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html">Transactional outbox pattern</a>. Prescriptive Guidance.</li>
+<li>Resend. <a href="https://resend.com/docs/dashboard/emails/idempotency-keys">Idempotency Keys</a>. Current provider behaviour and 24-hour horizon.</li>
+<li>AWS. <a href="https://docs.aws.amazon.com/ses/latest/dg/monitor-using-event-publishing.html">Monitor email sending using Amazon SES event publishing</a>. Delivery-event definitions.</li>
+<li>Supabase. <a href="https://supabase.com/docs/reference/javascript/auth-signinwithotp">JavaScript: signInWithOtp</a>. Token versus link configuration.</li>
+<li>Supabase. <a href="https://supabase.com/docs/reference/javascript/auth-verifyotp">JavaScript: verifyOtp</a>. Email OTP verification.</li>
+<li>Knesset. <a href="https://main.knesset.gov.il/Activity/Legislation/Laws/pages/lawbill.aspx?lawitemid=2167975&amp;t=lawsuggestionssearch">Privacy Protection Law Amendment 13</a>. Enacted 14 August 2024; effective 14 August 2025.</li>
+<li>Israel Privacy Protection Authority. <a href="https://www.gov.il/he/pages/tikun13_qa?chapterIndex=6">Amendment 13 questions and answers</a>. Published 14 August 2025; updated 18 August 2025.</li>
+</ol>
+</article></main></body></html>

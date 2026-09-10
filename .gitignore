@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+artifacts/*
+# Reviewed screenshots and synthetic evaluation results are part of the deliverable.
+!artifacts/evaluation-keywords.json
+!artifacts/evaluation-model.json
+!artifacts/gemma-hebrew-suggestion.png
+!artifacts/home-hebrew.png
+!artifacts/home-mobile-english.png
+!artifacts/live-ui-mocked.png
+!artifacts/research-desktop.png
+!artifacts/routing-hebrew.png
+.DS_Store

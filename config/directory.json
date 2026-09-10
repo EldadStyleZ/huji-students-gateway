@@ -1,0 +1,16 @@
+{
+  "version": "draft-2026-09-10",
+  "entries": [
+    {
+      "id": "replace-with-approved-triage",
+      "roleId": "triage",
+      "name": { "he": "צוות הכוונה באגודה", "en": "Union general triage team" },
+      "email": "replace-me@example.invalid",
+      "topicIds": ["*"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-09-10T00:00:00Z"
+    }
+  ]
+}

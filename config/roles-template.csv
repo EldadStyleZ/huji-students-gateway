@@ -1,0 +1,3 @@
+id,role_id,name_he,name_en,email,topic_ids,campus_ids,approved,approved_by,valid_until,responsibility_examples,exceptions,university_handoff
+replace-triage,triage,צוות הכוונה,General triage,replace@example.invalid,*,*,false,,,"Unclear requests; responsibility disputes",,""
+replace-academic-givat,academic,צוות אקדמיה גבעת רם,Givat Ram academic team,replace@example.invalid,course-registration;exam-appeal,givat-ram,false,,,"Describe the actual situations this team handles",,"Confirm department contacts separately"

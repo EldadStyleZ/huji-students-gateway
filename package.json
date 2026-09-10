@@ -1,0 +1,26 @@
+{
+  "name": "huji-student-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "worker": "node worker.mjs",
+    "test": "node --test",
+    "evaluate": "node scripts/evaluate-model.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "test:browser:live": "node scripts/browser-live-mock.mjs",
+    "test:browser:ai": "node scripts/browser-ai-smoke.mjs",
+    "research:build": "node scripts/render-research.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "marked": "18.0.12",
+    "playwright": "1.63.0",
+    "prettier": "3.9.6"
+  }
+}
