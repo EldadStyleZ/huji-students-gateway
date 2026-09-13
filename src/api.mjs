@@ -2,21 +2,12 @@ import { createHmac } from 'node:crypto';
 import { AppError, emailValid, ticketInput, destinationFor, fingerprint } from './domain.mjs';
 import { classify } from './ai.mjs';
 import { topics } from '../public/routing.js';
+import { rawBody, json as respond } from './http.mjs';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const respond = (res, status, value) => {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(value));
-};
 async function body(req) {
-  let total = 0;
-  const chunks = [];
-  for await (const chunk of req) {
-    total += chunk.length;
-    if (total > 16384) throw new AppError(413, 'request-too-large');
-    chunks.push(chunk);
-  }
+  const raw = await rawBody(req);
   try {
-    return JSON.parse(Buffer.concat(chunks).toString());
+    return JSON.parse(raw.toString());
   } catch {
     throw new AppError(400, 'invalid-json');
   }
@@ -66,6 +57,8 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
           live: config.live,
           aiEnabled: Boolean(config.aiBase),
           aiNotice: config.aiNotice,
+          noticeVersion: config.service?.noticeVersion,
+          responseExpectation: config.service?.responseExpectation,
         });
         return;
       }
@@ -75,9 +68,8 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
         if (req.headers['content-type']?.split(';')[0] !== 'application/json')
           throw new AppError(415, 'json-required');
       }
-      // Trust the connection address only. Configure edge limits for distributed
-      // public traffic; never trust a client-supplied X-Forwarded-For value.
-      await limit(`ip:${req.socket.remoteAddress}`, config.live ? 300 : 1000, 60);
+      // Generic traffic is bounded by the HTTP server; sensitive operations below
+      // use database-backed limits. Forwarded IP headers never grant authority.
       if (path === '/api/suggest' && req.method === 'POST') {
         const b = await body(req);
         if (typeof b?.text !== 'string' || !b.text.trim() || b.text.length > 3000)
@@ -89,12 +81,26 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
         return;
       }
       if (!config.live) throw new AppError(503, 'live-intake-not-configured');
+      if (path === '/api/auth/session' && req.method === 'GET') {
+        const u = await user(req);
+        respond(res, 200, { email: u.email });
+        return;
+      }
+      if (path === '/api/auth/logout' && req.method === 'POST') {
+        res.setHeader(
+          'Set-Cookie',
+          '__Host-gateway=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0',
+        );
+        respond(res, 200, { ok: true });
+        return;
+      }
       if (path === '/api/auth/request-code' && req.method === 'POST') {
         const b = await body(req);
-        if (!emailValid(b?.email)) throw new AppError(422, 'invalid-email');
-        await limit(`otp:${b.email.toLowerCase()}`, 1, 60);
+        if (!emailValid(b?.email?.trim())) throw new AppError(422, 'invalid-email');
+        const email = b.email.trim().toLowerCase();
+        await limit(`otp:${email}`, 1, 60);
         await limit('otp-global', 30, 60);
-        await store.requestCode(b.email);
+        await store.requestCode(email);
         respond(res, 200, { ok: true });
         return;
       }
@@ -135,6 +141,8 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
           respond(res, 200, replay);
           return;
         }
+        if (config.service && input.noticeVersion !== config.service.noticeVersion)
+          throw new AppError(409, 'notice-changed');
         const destination = destinationFor(input, config.directory);
         if (
           input.destinationId !== destination.id ||

@@ -13,7 +13,11 @@
     "test:browser": "node scripts/browser-smoke.mjs",
     "test:browser:live": "node scripts/browser-live-mock.mjs",
     "test:browser:ai": "node scripts/browser-ai-smoke.mjs",
-    "research:build": "node scripts/render-research.mjs"
+    "research:build": "node scripts/render-research.mjs",
+    "doctor": "node --env-file-if-exists=.env scripts/doctor.mjs",
+    "ops": "node --env-file-if-exists=.env scripts/ops.mjs",
+    "test:performance": "node scripts/performance-smoke.mjs",
+    "test:database": "sh scripts/test-database.sh"
   },
   "engines": {
     "node": ">=22"

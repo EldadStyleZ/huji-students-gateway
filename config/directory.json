@@ -1,16 +1,104 @@
 {
-  "version": "draft-2026-09-10",
+  "version": "5787-provisional-2026-09-13",
+  "basis": "Provisional title-based mapping requested by the user; exact duties pending. Office fallback is an inference, not identified as triage in the source.",
   "entries": [
     {
-      "id": "replace-with-approved-triage",
+      "id": "office",
       "roleId": "triage",
-      "name": { "he": "צוות הכוונה באגודה", "en": "Union general triage team" },
-      "email": "replace-me@example.invalid",
+      "name": {
+        "he": "מנהלת משרד ומשאבי אנוש",
+        "en": "Office and general guidance"
+      },
+      "email": "mazkirut@aguda.org.il",
       "topicIds": ["*"],
       "campusIds": ["*"],
       "approved": false,
       "approvedBy": "",
-      "validUntil": "2026-09-10T00:00:00Z"
+      "validUntil": "2026-12-13"
+    },
+    {
+      "id": "academics",
+      "roleId": "academic",
+      "name": {
+        "he": "מחלקת אקדמיה ומילואים",
+        "en": "Academics and reserve service"
+      },
+      "email": "r_academy@aguda.org.il",
+      "topicIds": ["course-registration", "exam-appeal", "academic-support"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-12-13"
+    },
+    {
+      "id": "reserves",
+      "roleId": "reserves",
+      "name": {
+        "he": "מחלקת אקדמיה ומילואים",
+        "en": "Academics and reserve service"
+      },
+      "email": "r_academy@aguda.org.il",
+      "topicIds": ["reserve-support"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-12-13"
+    },
+    {
+      "id": "welfare",
+      "roleId": "welfare",
+      "name": {
+        "he": "מחלקת רווחה וקהילה",
+        "en": "Welfare and community"
+      },
+      "email": "r_revaha@aguda.org.il",
+      "topicIds": ["tuition-payment", "scholarship", "accessibility", "campus-services"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-12-13"
+    },
+    {
+      "id": "dormitories",
+      "roleId": "welfare",
+      "name": {
+        "he": "רווחה ומעונות",
+        "en": "Welfare and dormitories"
+      },
+      "email": "sr_revaha@aguda.org.il",
+      "topicIds": ["housing"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-12-13"
+    },
+    {
+      "id": "social",
+      "roleId": "culture",
+      "name": {
+        "he": "מחלקת חברה",
+        "en": "Social department"
+      },
+      "email": "hevra@aguda.org.il",
+      "topicIds": ["events"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-12-13"
+    },
+    {
+      "id": "communities",
+      "roleId": "culture",
+      "name": {
+        "he": "רכזת קהילות",
+        "en": "Community coordinator"
+      },
+      "email": "communities@aguda.org.il",
+      "topicIds": ["initiatives"],
+      "campusIds": ["*"],
+      "approved": false,
+      "approvedBy": "",
+      "validUntil": "2026-12-13"
     }
   ]
 }

@@ -1,5 +1,7 @@
 # Student support gateway for the Hebrew University Student Union
 
+> **Implementation update — 13 September 2026:** the pilot deployment has been simplified to one Node service, Supabase and Resend, with an in-process background sender over the existing database outbox. Resend also handles Supabase OTP mail. The delivered code now includes verified delivery webhooks, bounded retention cleanup and local operator commands. The original research below remains useful context; current deployment instructions are in [setup](https://github.com/EldadStyleZ/huji-students-gateway/blob/main/docs/setup.md), with [operations](https://github.com/EldadStyleZ/huji-students-gateway/blob/main/docs/operations.md) and the [provisional contact map](https://github.com/EldadStyleZ/huji-students-gateway/blob/main/docs/contact-map.md).
+
 ## Recommendation
 
 Build a short, bilingual service portal with two equivalent entry points: choosing an issue and describing it in natural language. Both should enter the same maintained routing system. Show the proposed recipient and the reason for the recommendation before collecting a full request. For university-owned problems, distinguish the office that can act from the union team that can help the student navigate or escalate the issue.

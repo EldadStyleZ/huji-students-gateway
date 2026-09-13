@@ -1,14 +1,14 @@
 # Validation record
 
-Validation performed on 10 September 2026. All student messages and contact details used in tests were synthetic. No external email or OTP was sent.
+Updated implementation validation: 13 September 2026. The model experiment below was performed on 10 September 2026 and was not rerun for this change. All student messages and contact details used in tests were synthetic. No external email or OTP was sent.
 
 ## Automated code tests
 
-35 Node tests pass. They cover Hebrew/English keyword routing, unknown and ambiguous topics, approved and expired directories, recipient changes, duplicate submissions, ownership checks, CSRF, input limits, model output validation and fallback, and mail retry behaviour.
+46 Node tests pass. New checks include the independent Svix signature vector, tampered/stale/future webhook signatures, minimal event payloads, real local HTTP routing and asset caching, readiness, current Supabase API-key headers, expired-code/session error mapping, policy-version replay and shutdown during an active send. They cover Hebrew/English keyword routing, unknown and ambiguous topics, approved and expired directories, recipient changes, duplicate submissions, ownership checks, CSRF, input limits, model output validation and fallback, and mail retry behaviour.
 
 ## PostgreSQL
 
-All three migrations were applied to an isolated local PostgreSQL instance. The SQL assertions passed inside a transaction that was rolled back. Checks include atomic ticket/outbox rollback, one outbox row for repeated submission, cross-student denial, API-role privileges, rate limits, exclusive job claims, recovery after lease expiry, rejection of a stale worker acknowledgement, and provider-acceptance status.
+All four migrations were applied to fresh disposable PostgreSQL 16 instances on 13 September. The SQL assertions passed inside a transaction that was rolled back. Checks include atomic ticket/outbox rollback, one outbox row for repeated submission, cross-student denial, API-role privileges, rate limits, exclusive job claims, recovery after lease expiry, rejection of a stale worker acknowledgement, provider-acceptance status, duplicate/out-of-order/early delivery notifications, role restrictions on operator functions, attributed handling-state updates, cascade deletion and protection of active sends during cleanup.
 
 This validates the SQL behaviour on PostgreSQL. The external Supabase Auth service, hosted PostgREST RPC deployment and organizational infrastructure were not integration-tested with live credentials.
 
@@ -16,7 +16,7 @@ This validates the SQL behaviour on PostgreSQL. The external Supabase Auth servi
 
 A fresh headless Chrome profile tested Hebrew guided routing, a payment-block university handoff, retained description when going back, request review, draft download, keyword suggestions, English switching, mobile horizontal overflow and public topic links. Screenshots were inspected at desktop and mobile sizes.
 
-A mocked-live test exercised the approved recipient display, OTP interface, verified-email gating, failed submission, retry with the same idempotency key, receipt and status refresh. All external service responses were mocked.
+The updated mocked-live test exercised incorrect-code recovery, expired-session re-verification without resubmitting a ticket, reviewed notice versions, confirmed delivery states, sign-out, mobile receipt layout, and the approved recipient display, OTP interface, verified-email gating, failed submission, retry with the same idempotency key, receipt and status refresh. All external service responses were mocked.
 
 A separate real local model test used the AI-enabled preview and a synthetic Hebrew housing issue. The interface displayed a validated Gemma topic suggestion. The in-app browser integration could not initialize; these checks used a separate local browser process.
 
@@ -44,4 +44,14 @@ Raw results: `artifacts/evaluation-model.json`, `artifacts/evaluation-keywords.j
 
 ## Outstanding external validation
 
-Before live operation: approve the actual directory and routing policies; test OTP delivery and session expiry with staging accounts; validate hosted Supabase RPC permissions; test the verified email sender, transient failures and reconciliation; add delivery-event monitoring and staff operating procedures; implement privacy/retention requirements; evaluate sensitive cases and independent Hebrew examples; complete accessibility and capacity testing.
+Before live operation: set up the accounts and sending domain; review the provisional receiving arrangement and privacy policy; validate real Supabase Auth, hosted RPCs, SMTP delivery and signed provider notifications in staging; assign staff and alert ownership; configure mailbox/Auth/backup data retention separately; test sensitive handling procedures, accessibility and representative hosted capacity. Exact university department contacts and independent Hebrew model examples still require external input. No real student data, live provider credentials or externally delivered messages were used.
+
+## Performance smoke check
+
+The reproducible `npm run test:performance` check measures 100 local `/api/config` requests at concurrency 10 and records compressed page/JS/CSS sizes in `artifacts/performance-local.json`. The final 13 September run measured p50 1.46 ms and p95 10.19 ms, with approximately 19.5 kB of compressed core assets. Timings exclude real network latency, Supabase Auth/database operations, mail and model inference. This is a local overhead check, not a hosted capacity benchmark or a page-load guarantee.
+
+Static resources use representation-specific ETags and are served from precompressed memory buffers. The HTTP tests check cache revalidation, compression, HEAD behavior, private-path exclusion and no-store privacy responses.
+
+## Directory provenance
+
+The one-page user-supplied PDF was visually compared with extracted table rows. It contained 16 mailboxes. Role titles and addresses were copied to `config/roles-source.json`; staff names and the source PDF were not added to Git. Responsibility mapping is explicitly provisional, as requested, and is not proof that every role has agreed to receive those issue types. The user confirmed the social-media mailbox is monitored despite the vacancy marker in the source.

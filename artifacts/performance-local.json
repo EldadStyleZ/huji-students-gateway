@@ -1,0 +1,31 @@
+{
+  "createdAt": "2026-09-13T15:46:13.234Z",
+  "scope": "Local demo HTTP only; no external Auth, database, mail, model or internet latency. Not production capacity evidence.",
+  "requests": 100,
+  "concurrency": 10,
+  "p50ms": 1.46,
+  "p95ms": 10.19,
+  "files": [
+    {
+      "name": "index.html",
+      "bytes": 850,
+      "gzipBytes": 497
+    },
+    {
+      "name": "app.js",
+      "bytes": 36320,
+      "gzipBytes": 11842
+    },
+    {
+      "name": "routing.js",
+      "bytes": 11180,
+      "gzipBytes": 3701
+    },
+    {
+      "name": "styles.css",
+      "bytes": 15039,
+      "gzipBytes": 3436
+    }
+  ],
+  "totalGzipBytes": 19476
+}

@@ -13,3 +13,4 @@ artifacts/*
 !artifacts/research-desktop.png
 !artifacts/routing-hebrew.png
 .DS_Store
+!artifacts/performance-local.json

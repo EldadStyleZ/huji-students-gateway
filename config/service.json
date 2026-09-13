@@ -1,0 +1,14 @@
+{
+  "approved": false,
+  "noticeVersion": "union-intake-v2",
+  "operator": {
+    "he": "אגודת הסטודנטים והסטודנטיות בעברית",
+    "en": "Hebrew University Student Union"
+  },
+  "privacyEmail": "",
+  "retentionDays": 90,
+  "responseExpectation": {
+    "he": "זמן המענה יפורסם לאחר תיאום עם הצוות המטפל. השירות אינו מיועד למקרי חירום.",
+    "en": "Response times will be published after agreement with the handling team. This service is not for emergencies."
+  }
+}

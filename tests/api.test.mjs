@@ -155,3 +155,35 @@ test('missing idempotency key is rejected', async () =>
     (await request(createApi(config, store()), { headers: { 'idempotency-key': '' } })).status,
     400,
   ));
+test('updated privacy notice blocks new submissions but preserves an idempotent replay', async () => {
+  const s = store();
+  const withPolicy = { ...config, service: { noticeVersion: 'v2' } };
+  assert.equal(
+    (await request(createApi(withPolicy, s), { data: { ...input, noticeVersion: 'v1' } })).status,
+    409,
+  );
+  assert.ok(!s.calls.some((x) => x.name === 'gateway_create_ticket'));
+  const original = s.rpc;
+  s.rpc = (name, args) => (name === 'gateway_replay_ticket' ? { id: key } : original(name, args));
+  assert.equal(
+    (await request(createApi(withPolicy, s), { data: { ...input, noticeVersion: 'v1' } })).status,
+    200,
+  );
+});
+test('sign out clears the HttpOnly cookie and remains protected by Origin', async () => {
+  const response = await request(createApi(config, store()), {
+    path: '/api/auth/logout',
+    data: {},
+  });
+  assert.equal(response.status, 200);
+  assert.match(response.headers['Set-Cookie'], /Max-Age=0/);
+  assert.equal(
+    (
+      await request(createApi(config, store()), {
+        path: '/api/auth/logout',
+        headers: { origin: 'https://evil.example' },
+      })
+    ).status,
+    403,
+  );
+});

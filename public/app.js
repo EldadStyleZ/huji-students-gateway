@@ -26,12 +26,13 @@ const state = {
   consent: false,
 };
 let settings = { live: false, aiEnabled: false, aiNotice: '' };
+state.offline = false;
 state.destination = null;
 state.verifiedEmail = null;
 state.otpRequested = false;
 state.ticket = null;
 state.requestKey = crypto.randomUUID();
-state.busy = false;
+state.busy = true;
 state.suggestionMethod = 'keywords';
 const root = document.querySelector('#app');
 const t = (he, en) => (state.lang === 'he' ? he : en);
@@ -75,10 +76,10 @@ function heading(text, sub = '') {
   return `<h1 tabindex="-1">${text}</h1>${sub ? `<p class="lead">${sub}</p>` : ''}`;
 }
 function header() {
-  return `<header class="header"><button class="brand" data-action="home" aria-label="${t('לדף הבית', 'Home')}"><span class="brand-mark">${icon('arrow')}</span><span><strong>${t('כתובת אחת', 'One address')}</strong><small>${t('שער הפניות לסטודנטים', 'The student support gateway')}</small></span></button><nav aria-label="${t('ניווט ראשי', 'Main navigation')}"><a href="/research.html">${t('מחקר ותכנון', 'Research & design')}</a><button class="language" data-action="language">${icon('globe')} ${t('English', 'עברית')}</button></nav></header>`;
+  return `<header class="header"><button class="brand" data-action="home" aria-label="${t('לדף הבית', 'Home')}"><span class="brand-mark">${icon('arrow')}</span><span><strong>${t('כתובת אחת', 'One address')}</strong><small>${t('שער הפניות לסטודנטים', 'The student support gateway')}</small></span></button><nav aria-label="${t('ניווט ראשי', 'Main navigation')}"><a href="/privacy" target="_blank" rel="noopener">${t('פרטיות', 'Privacy')}</a>${state.verifiedEmail ? button('logout', t('יציאה', 'Sign out'), 'text-button') : ''}<button class="language" data-action="language">${icon('globe')} ${t('English', 'עברית')}</button></nav></header>`;
 }
 function footer() {
-  return `<footer><span>${t('קונספט עבור אגודת הסטודנטים והסטודנטיות בעברית', 'A concept for the Hebrew University Student Union')}</span><span>${settings.live ? t('שירות פניות · הכוונה לפי ספר תפקידים מאושר', 'Student support · approved role directory') : t('אב טיפוס · מסלולי ההכוונה להמחשה בלבד', 'Prototype · illustrative routing only')}</span></footer>`;
+  return `<footer><span>${t('אגודת הסטודנטים והסטודנטיות בעברית', 'Hebrew University Student Union')} · <a href="/privacy" target="_blank" rel="noopener">${t('פרטיות', 'Privacy')}</a></span><span>${settings.live ? t('שירות פניות · הכוונה לפי ספר תפקידים מאושר', 'Student support · approved role directory') : t('אב טיפוס · מסלולי ההכוונה להמחשה בלבד', 'Prototype · illustrative routing only')}</span></footer>`;
 }
 function home() {
   return `<section class="hero"><span class="eyebrow">${t('קל יותר למצוא את מי שיעזור', 'A LITTLE LESS RUNAROUND')}</span>${heading(t('יש שאלה.<br>יש למי לפנות.', 'A question.<br>A clear way forward.'), t('לא צריך להכיר את כל בעלי התפקידים. נתחיל במה שצריך, ונמצא יחד את הכתובת המתאימה.', 'You don’t need to know every role or email address. Start with what you need, and find the right place to ask.'))}<div class="hero-note"><span class="dot"></span>${t('הכוונה ללא התחברות · אפשר לחזור ולשנות בכל שלב', 'Browse without signing in · change your answers at any time')}</div></section><section class="workspace"><div class="section-bar"><h2>${t('איך נוח לך להתחיל?', 'How would you like to start?')}</h2><div class="segmented" role="group" aria-label="${t('דרך ההכוונה', 'Routing method')}">${button('guided', t('בחירה לפי נושא', 'Choose a topic'), 'segment', `aria-pressed="${state.mode === 'guided'}"`)}${button('natural', `${icon('spark')}${t('במילים שלי', 'In my own words')}`, 'segment', `aria-pressed="${state.mode === 'natural'}"`)}</div></div>${state.mode === 'guided' ? `<div class="category-grid">${categories.map((c) => `<button class="category" data-category="${c.id}"><span class="category-icon">${icon(c.icon)}</span><span class="category-copy"><strong>${label(c.name)}</strong><small>${label(c.description)}</small></span>${icon('arrow', 'direction')}</button>`).join('')}</div>` : natural()}<div class="direct-links"><span>${t('קיצורי דרך', 'Quick starts')}</span>${button('quick-course', t('לא מצליחים להירשם לקורס?', 'Can’t register for a course?'), 'text-button')}${button('quick-reserves', t('חזרה ממילואים', 'Returning from reserve service'), 'text-button')}</div></section><section class="how"><div><span>01</span><h3>${t('מספרים מה קרה', 'Tell us what happened')}</h3><p>${t('בוחרים נושא או כותבים בקצרה.', 'Choose a topic or write a short description.')}</p></div><div><span>02</span><h3>${t('מוצאים את הכתובת', 'Find the right contact')}</h3><p>${t('רואים מי יכול לעזור, ולמה.', 'See who can help, and why they fit.')}</p></div><div><span>03</span><h3>${t('מחליטים איך להמשיך', 'Choose your next step')}</h3><p>${t('פונים לאוניברסיטה או מבקשים סיוע מהאגודה.', 'Contact the university or ask the union for support.')}</p></div></section>`;
@@ -125,7 +126,7 @@ function result() {
   return `${heading(t('מכאן אפשר להתקדם.', 'Here’s a way forward.'), t('לפי הנושא והפרטים שבחרת, אלו כיווני הפנייה האפשריים.', 'Based on your topic and answers, these are possible places to start.'))}<div class="notice">${settings.live ? t('הפנייה לאגודה תועבר לנמען המוצג. ההכוונה לאוניברסיטה היא הצעה לבדיקה מול היחידה הרלוונטית.', 'Union requests go to the displayed recipient. University guidance should be checked with the relevant office.') : t('הדגמה: חלוקת האחריות וכתובות הדוא״ל עדיין לא אומתו. אלו הצעות להמחשת המוצר, ולא הנחיות רשמיות.', 'Demo: responsibilities and email addresses are not verified. These suggestions illustrate the product and are not official guidance.')}</div>${r.university ? `<article class="destination university"><span class="tag">${t('גורם באוניברסיטה · כיוון אפשרי', 'University office · possible first contact')}</span><h2>${label(r.university.name)}</h2><p>${label(r.university.reason)}</p>${r.needsDepartment ? `<p class="muted">${t('במערכת המלאה, החוג או הפקולטה יצמצמו את ההפניה למזכירות המתאימה.', 'In the full service, your department or faculty will narrow this to the correct office.')}</p>` : ''}<a class="secondary" href="${r.university.url}" target="_blank" rel="noopener noreferrer">${t('לאתר האוניברסיטה', 'Open university website')} ↗</a><small>${t('זהו אתר מידע כללי, לא קישור ישיר למזכירות שלך. הפנייה לא תועבר אליו אוטומטית.', 'This is a general information page, not your department’s direct contact. Your request is not forwarded there.')}</small></article>` : ''}<article class="destination union"><span class="tag">${t('סיוע מטעם אגודת הסטודנטים', 'Student union support')}</span><h2>${label(state.destination?.name || roles[r.roleId])}</h2><p>${r.roleId === 'triage' ? t('לא צריך לדעת מי אחראי. צוות הכוונה יוכל לבדוק מי הגורם המתאים.', 'You don’t need to know who is responsible. A triage team can help find the right owner.') : t('אפשר לבקש עזרה בהכוונה, בהבנת התהליך או בייצוג מול הגורם המטפל.', 'Ask for help navigating the process, understanding the next step, or representing your concern.')}</p><div class="recipient"><span>${t('קמפוס', 'Campus')}</span><strong>${label(campuses.find((c) => c.id === state.campus).name)}</strong><span>${t('דוא״ל', 'Email')}</span><strong>${state.destination ? esc(state.destination.email) : t('יוגדר לאחר אישור ספר התפקידים', 'Pending approved role directory')}</strong></div>${button('compose', t('הכנת פנייה לאגודה', 'Prepare a union request'), 'primary')}</article><div class="result-actions">${button('share', `${icon('link')}${t('העתקת קישור לנושא', 'Copy topic link')}`, 'text-button')}${button('quick-general', t('הכיוון לא מתאים לי', 'This doesn’t fit my issue'), 'text-button')}</div><p id="share-status" role="status"></p>`;
 }
 function compose() {
-  return `${heading(t('מה חשוב שנדע?', 'What should we know?'), t('תיאור קצר וכתובת לחזרה. אפשר להוסיף פרטים בהמשך.', 'A short description and a reply address. More details can come later.'))}<div class="compact-recipient">${icon('chat')}<span>${t('אל: ', 'To: ')}<strong>${label(state.destination?.name || roles[route().roleId])}</strong></span></div><form id="compose-form"><label for="description">${t('תיאור הפנייה (חובה)', 'Your issue (required)')}</label><textarea id="description" name="description" required maxlength="3000" rows="5" aria-describedby="description-help">${esc(state.description)}</textarea><small id="description-help">${t('מה קרה, ומה היית רוצה שיקרה? אין צורך לצרף מסמכים רפואיים, פרטי בנק או תעודת זהות.', 'What happened, and what outcome would help? Please leave out medical documents, bank details and ID numbers.')}</small><div class="field-pair"><div><label for="email">${t('דוא״ל למענה (חובה)', 'Reply email (required)')}</label><input id="email" name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr" value="${esc(state.email)}" placeholder="name@example.com"></div><div><label for="name">${t('איך לפנות אליך? (לא חובה)', 'Your name (optional)')}</label><input id="name" name="name" maxlength="100" autocomplete="name" value="${esc(state.name)}"></div></div><label class="consent"><input type="checkbox" name="consent" required ${state.consent ? 'checked' : ''}><span>${settings.live ? t('אני מאשר/ת לשמור את הפנייה ולהעביר את התיאור וכתובת המענה לנמען המוצג באגודה לצורך טיפול.', 'I agree to store this request and share its description and my reply email with the displayed union recipient for handling.') : t('ברור לי שזהו דמו: אפשר להכין טיוטה, אבל אף פנייה או דוא״ל לא יישלחו.', 'I understand this is a demo: I can prepare a draft, but no request or email will be sent.')}</span></label><button class="primary" type="submit">${t('בדיקת הפנייה', 'Review request')} ${icon('arrow', 'direction')}</button></form>`;
+  return `${heading(t('מה חשוב שנדע?', 'What should we know?'), t('תיאור קצר וכתובת לחזרה. אפשר להוסיף פרטים בהמשך.', 'A short description and a reply address. More details can come later.'))}<div class="compact-recipient">${icon('chat')}<span>${t('אל: ', 'To: ')}<strong>${label(state.destination?.name || roles[route().roleId])}</strong></span></div><form id="compose-form"><label for="description">${t('תיאור הפנייה (חובה)', 'Your issue (required)')}</label><textarea id="description" name="description" required maxlength="3000" rows="5" aria-describedby="description-help">${esc(state.description)}</textarea><small id="description-help">${t('מה קרה, ומה היית רוצה שיקרה? אין צורך לצרף מסמכים רפואיים, פרטי בנק או תעודת זהות.', 'What happened, and what outcome would help? Please leave out medical documents, bank details and ID numbers.')}</small><div class="field-pair"><div><label for="email">${t('דוא״ל למענה (חובה)', 'Reply email (required)')}</label><input id="email" name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr" value="${esc(state.email)}" placeholder="name@example.com"></div><div><label for="name">${t('איך לפנות אליך? (לא חובה)', 'Your name (optional)')}</label><input id="name" name="name" maxlength="100" autocomplete="name" value="${esc(state.name)}"></div></div><label class="consent"><input type="checkbox" name="consent" required ${state.consent ? 'checked' : ''}><span>${settings.live ? t('אני מאשר/ת לשמור את הפנייה ולהעביר את התיאור וכתובת המענה לנמען המוצג באגודה לצורך טיפול.', 'I agree to store this request and share its description and my reply email with the displayed union recipient for handling.') : t('ברור לי שזהו דמו: אפשר להכין טיוטה, אבל אף פנייה או דוא״ל לא יישלחו.', 'I understand this is a demo: I can prepare a draft, but no request or email will be sent.')}</span></label><p class="muted"><a href="/privacy" target="_blank" rel="noopener">${t('איך נשמר המידע שלי?', 'How is my information handled?')} ↗</a></p><button class="primary" type="submit">${t('בדיקת הפנייה', 'Review request')} ${icon('arrow', 'direction')}</button></form>`;
 }
 function review() {
   return `${heading(t('רגע לפני הסיום', 'Review your request'), t('בדיקה קצרה של הנמען והתוכן.', 'Check the recipient and the message.'))}<article class="review"><dl><dt>${t('נמען', 'Recipient')}</dt><dd>${label(state.destination?.name || roles[route().roleId])}</dd><dt>${t('נושא', 'Topic')}</dt><dd>${label(currentTopic().name)}</dd><dt>${t('דוא״ל למענה', 'Reply email')}</dt><dd dir="ltr">${esc(state.email)}</dd>${state.name ? `<dt>${t('שם', 'Name')}</dt><dd>${esc(state.name)}</dd>` : ''}</dl><h2>${t('הפנייה שלך', 'Your message')}</h2><p class="message">${esc(state.description)}</p></article>${settings.live ? authPanel() : `<p class="muted">${t('לא מוגדרת כתובת דוא״ל לנמען. בדמו אפשר להפיק טיוטה בלבד.', 'No recipient email is configured. This demo can only prepare a draft.')}</p>`}<div class="form-bottom">${button('edit', t('עריכת הפרטים', 'Edit details'), 'secondary')}${settings.live ? button('send', t('שליחת הפנייה לאגודה', 'Send request to the union'), 'primary', state.verifiedEmail?.toLowerCase() === state.email.toLowerCase() ? '' : 'disabled') : button('finish', t('סיום והצגת הטיוטה', 'Finish and view draft'), 'primary')}</div>`;
@@ -137,7 +138,8 @@ function done() {
 function render(focus = true) {
   document.documentElement.lang = state.lang;
   document.documentElement.dir = state.lang === 'he' ? 'rtl' : 'ltr';
-  root.innerHTML = `${header()}<main id="main">${state.step === 'home' ? home() : flow()}</main>${footer()}`;
+  root.innerHTML = `${header()}<main id="main">${state.offline ? `<p class="notice">${t('לא הצלחנו להתחבר לשירות. אפשר לצפות בהדגמה בלבד; פניות לא יישלחו.', 'The service is unavailable. You can browse a preview; requests will not be sent.')}</p>` : ''}<p id="activity" class="activity" role="status" aria-live="polite"></p>${state.step === 'home' ? home() : flow()}</main>${footer()}`;
+  if (state.busy) setBusy(true);
   document.title = `${t('כתובת אחת', 'One address')} — ${state.step === 'home' ? t('שער הפניות לסטודנטים', 'Student support gateway') : t('הכוונה ופנייה', 'Routing and request')}`;
   if (focus) {
     document.querySelector('h1')?.focus({ preventScroll: true });
@@ -181,9 +183,14 @@ root.addEventListener('submit', async (e) => {
     if (id === 'suggest-form') {
       if (settings.aiEnabled) {
         setBusy(true);
-        const data = await api('/api/suggest', { text: state.description, allowModel: true });
-        state.suggestions = data.suggestions;
-        state.suggestionMethod = data.method;
+        try {
+          const data = await api('/api/suggest', { text: state.description, allowModel: true });
+          state.suggestions = data.suggestions;
+          state.suggestionMethod = data.method;
+        } catch {
+          state.suggestions = suggest(state.description);
+          state.suggestionMethod = 'keywords';
+        }
       } else {
         state.suggestions = suggest(state.description);
         state.suggestionMethod = 'keywords';
@@ -221,6 +228,8 @@ root.addEventListener('submit', async (e) => {
       const token = new FormData(e.target).get('token');
       const data = await api('/api/auth/verify-code', { email: state.email, token });
       state.verifiedEmail = data.email;
+      state.step = state.authReturnStep || 'review';
+      state.authReturnStep = null;
       render();
     }
   } catch (error) {
@@ -247,6 +256,14 @@ root.addEventListener('click', async (e) => {
   }
   switch (el.dataset.action) {
     case 'home':
+      if (state.step === 'done') {
+        state.description = '';
+        state.name = '';
+        state.consent = false;
+        state.ticket = null;
+        state.email = state.verifiedEmail || '';
+        state.requestKey = crypto.randomUUID();
+      }
       state.step = 'home';
       render();
       break;
@@ -311,6 +328,20 @@ root.addEventListener('click', async (e) => {
       }
       break;
     }
+    case 'logout':
+      await liveAction(async () => {
+        await api('/api/auth/logout', {});
+        state.verifiedEmail = null;
+        state.otpRequested = false;
+        state.email = '';
+        state.name = '';
+        state.description = '';
+        state.consent = false;
+        state.ticket = null;
+        state.step = 'home';
+        render();
+      });
+      break;
     case 'request-code':
       await liveAction(async () => {
         await api('/api/auth/request-code', { email: state.email });
@@ -332,6 +363,7 @@ root.addEventListener('click', async (e) => {
             lang: state.lang,
             destinationId: state.destination.id,
             directoryVersion: state.destination.directoryVersion,
+            noticeVersion: settings.noticeVersion,
           },
           { 'Idempotency-Key': state.requestKey },
         );
@@ -389,9 +421,11 @@ async function api(path, data, headers = {}) {
 function setBusy(busy) {
   state.busy = busy;
   root.setAttribute('aria-busy', String(busy));
-  for (const el of root.querySelectorAll('button')) {
+  const activity = root.querySelector('#activity');
+  if (activity) activity.textContent = busy ? t('רק רגע…', 'One moment…') : '';
+  for (const el of root.querySelectorAll('button, input, textarea, select')) {
     if (busy) {
-      el.dataset.wasDisabled = String(el.disabled);
+      if (el.dataset.wasDisabled === undefined) el.dataset.wasDisabled = String(el.disabled);
       el.disabled = true;
     } else if (el.dataset.wasDisabled !== undefined) {
       el.disabled = el.dataset.wasDisabled === 'true';
@@ -409,6 +443,18 @@ function showError(error) {
     document.querySelector('#main').prepend(box);
   }
   const codes = {
+    'verify-again': t(
+      'האימות פג. יש לאמת שוב את הדוא״ל; פרטי הפנייה נשמרו בדף.',
+      'Your session expired. Verify your email again; your request details are still on this page.',
+    ),
+    'invalid-code': t(
+      'הקוד שגוי או שפג תוקפו. אפשר לנסות שוב או לבקש קוד חדש.',
+      'The code is incorrect or expired. Try again or request a new code.',
+    ),
+    'notice-changed': t(
+      'מדיניות המידע עודכנה. יש לרענן את הדף ולעיין בה לפני השליחה. כדאי להעתיק את הטקסט שלך תחילה.',
+      'The privacy notice changed. Copy your draft, refresh the page and review the notice before sending.',
+    ),
     'recipient-changed': t(
       'הנמען עודכן. יש לחזור למסך ההכוונה ולבדוק את הנמען לפני ניסיון נוסף.',
       'The recipient changed. Return to routing and review the recipient before retrying.',
@@ -436,9 +482,11 @@ function showError(error) {
   if (['session-expired', 'sign-in-required'].includes(error.message)) {
     state.verifiedEmail = null;
     state.otpRequested = false;
+    state.authReturnStep = state.step === 'done' ? 'done' : 'review';
     state.step = 'review';
     render();
-    showError(new Error('retry-auth'));
+    showError(new Error('verify-again'));
+    return;
   }
   box.scrollIntoView({ block: 'start' });
 }
@@ -458,11 +506,24 @@ function authPanel() {
   return `<section class="review"><h2>${t('אימות כתובת המענה', 'Verify your reply address')}</h2><p>${t('נשלח קוד חד־פעמי כדי לוודא שהמענה יגיע אליך.', 'We’ll send a one-time code to make sure replies reach you.')}</p>${state.otpRequested ? `<form id="otp-form"><label for="token">${t('הקוד שנשלח בדוא״ל', 'Code from your email')}</label><input id="token" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" required><button class="primary" type="submit">${t('אימות הקוד', 'Verify code')}</button></form>${button('request-code', t('שליחת קוד נוסף', 'Send another code'), 'text-button')}` : button('request-code', t('שליחת קוד אימות', 'Send verification code'), 'secondary')}</section>`;
 }
 function liveDone() {
-  return `${heading(t('הפנייה התקבלה.', 'Your request was received.'), t('הפנייה נשמרה במערכת. העברה בדוא״ל מתבצעת ברקע.', 'Your request is saved. Email forwarding runs in the background.'))}<article class="review"><h2>${t('מספר הפנייה', 'Request reference')}</h2><p dir="ltr">${esc(state.ticket.id)}</p><p>${{ queued: t('הדוא״ל ממתין להעברה.', 'Email is queued.'), provider_accepted: t('ספק הדוא״ל קיבל את ההודעה. זה אינו אישור שהנמען קרא אותה.', 'The email provider accepted the message. This does not confirm the recipient read it.'), failed: t('העברה בדוא״ל נכשלה ונדרש טיפול של מנהל המערכת. הפנייה עצמה נשמרה.', 'Email forwarding failed and needs operator attention. Your request is saved.') }[state.ticket.emailStatus] || ''}</p>${button('refresh-ticket', t('עדכון מצב', 'Refresh status'), 'secondary')}</article>`;
+  return `${heading(t('הפנייה התקבלה.', 'Your request was received.'), t('הפנייה נשמרה במערכת. העברה בדוא״ל מתבצעת ברקע.', 'Your request is saved. Email forwarding runs in the background.'))}<article class="review"><h2>${t('מספר הפנייה', 'Request reference')}</h2><p dir="ltr">${esc(state.ticket.id)}</p><p>${t('מצב הטיפול: ', 'Handling status: ')}${{ received: t('התקבלה', 'Received'), in_progress: t('בטיפול', 'In progress'), resolved: t('הטיפול הסתיים', 'Resolved') }[state.ticket.status] || ''}</p><p>${{ delivered: t('ההודעה נמסרה לשרת הדוא״ל של הנמען. אין בכך אישור קריאה או טיפול.', 'The message reached the recipient’s mail server. This does not confirm reading or resolution.'), delayed: t('יש עיכוב זמני במסירת ההודעה. אין צורך לשלוח שוב.', 'Email delivery is delayed. You do not need to submit again.'), bounced: t('שרת הדוא״ל דחה את ההודעה. הצוות הטכני צריך לבדוק את כתובת הנמען.', 'The recipient’s mail server rejected the message. An operator needs to check the destination.'), complained: t('ההודעה סומנה כדואר זבל. נדרשת בדיקה של מנהל המערכת.', 'The message was reported as spam and needs operator attention.'), queued: t('הדוא״ל ממתין להעברה.', 'Email is queued.'), provider_accepted: t('ספק הדוא״ל קיבל את ההודעה. זה אינו אישור שהנמען קרא אותה.', 'The email provider accepted the message. This does not confirm the recipient read it.'), failed: t('העברה בדוא״ל נכשלה ונדרש טיפול של מנהל המערכת. הפנייה עצמה נשמרה.', 'Email forwarding failed and needs operator attention. Your request is saved.') }[state.ticket.emailStatus] || ''}</p>${settings.responseExpectation ? `<p>${esc(label(settings.responseExpectation))}</p>` : ''}${button('refresh-ticket', t('עדכון מצב', 'Refresh status'), 'secondary')}${button('home', t('פנייה חדשה', 'New request'), 'text-button')}</article>`;
 }
 try {
   settings = await api('/api/config');
   render(false);
+  if (settings.live) {
+    // Session recovery is optional and never holds up topic selection.
+    api('/api/auth/session')
+      .then((session) => {
+        state.verifiedEmail = session.email;
+        if (!state.email) state.email = session.email;
+        if (!state.busy && state.step === 'review') render(false);
+      })
+      .catch(() => {});
+  }
 } catch {
-  /* Keep a local, non-submitting demo if the API is unavailable. */
+  state.offline = true;
+  render(false);
 }
+
+setBusy(false);

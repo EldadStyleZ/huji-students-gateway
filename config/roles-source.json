@@ -1,0 +1,104 @@
+{
+  "source": "User-supplied union staff PDF for 5787, received 2026-09-13; visually checked against its single page",
+  "responsibilitiesConfirmed": false,
+  "roles": [
+    {
+      "id": "chair",
+      "department": "הנהלה",
+      "title": "יו״ר",
+      "email": "yor@aguda.org.il"
+    },
+    {
+      "id": "ceo",
+      "department": "הנהלה",
+      "title": "מנכ״ל",
+      "email": "mancal@aguda.org.il"
+    },
+    {
+      "id": "deputy-ceo",
+      "department": "הנהלה",
+      "title": "סמנכ״ל",
+      "email": "s_mancal@aguda.org.il"
+    },
+    {
+      "id": "office",
+      "department": "הנהלה",
+      "title": "מנהלת משרד ומשאבי אנוש",
+      "email": "mazkirut@aguda.org.il"
+    },
+    {
+      "id": "knowledge",
+      "department": "הנהלה",
+      "title": "רכז אינטרנט ניהול ידע",
+      "email": "yeda@aguda.org.il"
+    },
+    {
+      "id": "accounts",
+      "department": "הנהלה",
+      "title": "מנהלת חשבונות",
+      "email": "chashevet.helper@aguda.org.il"
+    },
+    {
+      "id": "academics",
+      "department": "אקדמיה",
+      "title": "רמ״ח אקדמיה ומילואים",
+      "email": "r_academy@aguda.org.il"
+    },
+    {
+      "id": "representation",
+      "department": "אקדמיה",
+      "title": "רכזת מייצגים",
+      "email": "academy_rights@aguda.org.il"
+    },
+    {
+      "id": "mentors",
+      "department": "שנה א לא לבד (מנטורים)",
+      "title": "מנהלת תכנית שנה א׳ לא לבד",
+      "email": "msmentors@aguda.org.il"
+    },
+    {
+      "id": "welfare",
+      "department": "רווחה וקהילה",
+      "title": "רמ״ח רווחה וקהילה",
+      "email": "r_revaha@aguda.org.il"
+    },
+    {
+      "id": "dormitories",
+      "department": "רווחה וקהילה",
+      "title": "סרמ״ח רווחה ורכזת מעונות",
+      "email": "sr_revaha@aguda.org.il"
+    },
+    {
+      "id": "communities",
+      "department": "רווחה וקהילה",
+      "title": "רכזת קהילות",
+      "email": "communities@aguda.org.il"
+    },
+    {
+      "id": "social",
+      "department": "חברה",
+      "title": "רמ״ח חברה",
+      "email": "hevra@aguda.org.il"
+    },
+    {
+      "id": "communications",
+      "department": "הסברה",
+      "title": "רמ״ח הסברה ודוברות",
+      "email": "r_hasbara@aguda.org.il"
+    },
+    {
+      "id": "social-media",
+      "department": "הסברה",
+      "title": "רכז/ת סושיאל",
+      "email": "creative@aguda.org.il",
+      "vacantInSource": true,
+      "monitoredConfirmedByUser": "2026-09-13"
+    },
+    {
+      "id": "graphics",
+      "department": "הסברה",
+      "title": "גרפיקאית",
+      "email": "graphics@aguda.org.il"
+    }
+  ]
+}

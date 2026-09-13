@@ -4,6 +4,8 @@ A Hebrew-first, English-enabled starter for guided student requests, natural-lan
 
 **It starts in demo mode.** Demo text stays in page memory unless model suggestions are explicitly enabled. No live requests or emails are sent in demo mode. An approved role directory and external service configuration are required for live intake.
 
+**Next step: [easy setup guide](docs/setup.md).** The pilot now uses one Railway application service, Supabase and Resend. The [provisional role map](docs/contact-map.md) uses the supplied staff PDF; exact responsibilities can be refined later. [Operations](docs/operations.md) covers delivery, status and deletion.
+
 ## Run locally
 
 Requires Node.js 22 or newer. The application has no runtime npm dependencies. Run `npm ci` to install the pinned development tools for browser testing, formatting and rebuilding the report.
@@ -64,7 +66,7 @@ The research compares Gemma, Qwen and multilingual E5. E5 retrieval is a recomme
 | `PORT`                                   | Port assigned by the host, or 4173 locally                      |
 | `SUPABASE_URL`                           | Staging or production HTTPS project URL                         |
 | `SUPABASE_PUBLISHABLE_KEY`               | Auth API key                                                    |
-| `SUPABASE_SERVICE_ROLE_KEY`              | Privileged server-only key; never put it into browser code      |
+| `SUPABASE_SECRET_KEY`                    | Privileged server-only key; never put it into browser code      |
 | `RATE_LIMIT_SECRET`                      | At least 32 random characters used to hash rate-limit subjects  |
 | `RESEND_API_KEY`, `MAIL_FROM`            | Sending API key and verified sender                             |
 | `ROUTING_POLICY_APPROVED=true`           | Explicit operator acknowledgement of reviewed routing           |
@@ -74,7 +76,11 @@ The research compares Gemma, Qwen and multilingual E5. E5 retrieval is a recomme
 
 ## Deployment recommendation
 
-Deploy the same repository as two Railway services: web (`node server.mjs`) and worker (`node worker.mjs`). Only the web service needs a public domain. Both use the same Supabase database and appropriate secrets. The supplied Dockerfile runs as a non-root user and refuses production startup in demo mode. Use `/healthz` for process liveness; database readiness and queue-age monitoring require additional checks.
+Deploy this repository as **one Railway service** running `node server.mjs`. The same process serves the UI/API and runs the background sender and retention maintenance. PostgreSQL provides the durable queue; no additional queue server or worker deployment is needed. Resend also supplies Supabase's SMTP sender for sign-in codes.
+
+The Dockerfile runs as a non-root user and refuses production startup in demo mode. `railway.json` checks `/readyz` for schema/database/background readiness; `/healthz` reports process liveness. Set `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=35` and keep the service awake. See the [setup guide](docs/setup.md) for account, DNS, variables and staging steps.
+
+Static assets are compressed and read into memory at startup, with ETag revalidation. Local synthetic HTTP checks and asset sizes are recorded in `artifacts/performance-local.json`; these exclude external service/network latency. Restart the local server after edits because this small runtime does not include hot reload.
 
 Keep the web UI and API on one origin for the initial release. Vercel or Netlify can host a future frontend, but this long-running Node server and worker are **not** packaged as their serverless functions. A split deployment would require deliberate cookie, CSRF, CORS and worker changes. Do not deploy the current API by copying it into a serverless handler unchanged.
 
@@ -82,29 +88,36 @@ No Supabase project, sending domain or production deployment was created during 
 
 ## Application boundaries
 
-| Path                                 | Responsibility                                                                      |
-| ------------------------------------ | ----------------------------------------------------------------------------------- |
-| `public/app.js`, `public/styles.css` | Student-facing UI, Hebrew/English, review and demo flows                            |
-| `public/routing.js`                  | Shared topic catalog, keyword baseline and illustrative university-routing logic    |
-| `src/domain.mjs`                     | Input validation, approved recipient resolution and request fingerprints            |
-| `src/api.mjs`                        | Same-origin API, authentication checks, rate limits and durable intake              |
-| `src/supabase.mjs`                   | Supabase Auth and database RPC adapter                                              |
-| `src/ai.mjs`                         | Optional constrained classification, output validation and fallback                 |
-| `src/mail.mjs`, `worker.mjs`         | Leased outbox processing and provider idempotency                                   |
-| `config/directory.json`              | Versioned, reviewable role-to-mailbox directory; sample is intentionally unapproved |
-| `supabase/migrations`                | Private tables, transactions, permissions, retry leases and rate limits             |
+| Path                                 | Responsibility                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `public/app.js`, `public/styles.css` | Student-facing UI, Hebrew/English, review and demo flows                                                            |
+| `public/routing.js`                  | Shared topic catalog, keyword baseline and illustrative university-routing logic                                    |
+| `src/domain.mjs`                     | Input validation, approved recipient resolution and request fingerprints                                            |
+| `src/api.mjs`                        | Same-origin API, authentication checks, rate limits and durable intake                                              |
+| `src/supabase.mjs`                   | Supabase Auth and database RPC adapter                                                                              |
+| `src/ai.mjs`                         | Optional constrained classification, output validation and fallback                                                 |
+| `src/mail.mjs`, `src/background.mjs` | Leased outbox processing and provider idempotency                                                                   |
+| `config/directory.json`              | Versioned, reviewable role-to-mailbox directory; actual mailboxes with a provisional, unapproved responsibility map |
+| `src/webhook.mjs`                    | Signature-checked delivery notifications, with minimal metadata                                                     |
+| `config/service.json`                | Bilingual service notice, privacy contact and retention                                                             |
+| `scripts/ops.mjs`                    | Local administrator commands; no public admin UI                                                                    |
+| `supabase/migrations`                | Private tables, transactions, permissions, retry leases and rate limits                                             |
 
 ## API contract
 
-- `GET /api/config`: public feature flags and model processing notice; never secrets.
+- `GET /api/config`: public feature flags, notice version and model processing notice; never secrets.
+- `GET /privacy`: Hebrew/English privacy notice.
+- `GET /api/auth/session`: recover the current verified email from the HttpOnly cookie.
+- `POST /api/auth/logout`: clear the local session cookie.
+- `POST /api/webhooks/resend`: signed provider notification; uses raw-body signature validation instead of browser Origin checks.
 - `POST /api/suggest`: `{text, allowModel:true}`; returns up to three validated topic suggestions and the actual method used. No model call unless configured.
 - `POST /api/route`: `{topicId,campus,registrationIssue}`; live mode returns the current approved destination for review.
 - `POST /api/auth/request-code`: `{email}`; initiates an OTP email only in live mode.
 - `POST /api/auth/verify-code`: `{email,token}`; sets a Secure HttpOnly SameSite cookie.
-- `POST /api/tickets`: requires authentication, a UUID `Idempotency-Key`, confirmed topic/context, description, optional name, language, consent, reviewed `destinationId` and `directoryVersion`. Recipient and student identity are derived server-side.
+- `POST /api/tickets`: requires authentication, a UUID `Idempotency-Key`, confirmed topic/context, description, optional name, language, consent, reviewed `destinationId`, `directoryVersion` and `noticeVersion`. Recipient and student identity are derived server-side.
 - `GET /api/tickets/:uuid`: authenticated owner-only status lookup. Reference numbers are not authentication tokens.
 
-All POST routes require an exact `Origin` match and JSON content type. The raw body is capped at 16 KiB, descriptions at 3,000 characters. The UI retains request state in memory, without localStorage or URL persistence. Email OTP sessions expire and do not silently refresh; users verify again when needed.
+Browser POST routes require an exact `Origin` match and JSON content type. The raw body is capped at 16 KiB, descriptions at 3,000 characters. The UI retains request state in memory, without localStorage or URL persistence. Email OTP sessions expire and do not silently refresh; users verify again when needed.
 
 ## Reliability and operations
 
@@ -112,11 +125,13 @@ Ticket and outbox writes commit together. Repeated requests with the same user/k
 
 Temporary network/provider failures retry with increasing delays, up to six attempts. Automatic retries stop before 23 hours from the first attempt because the provider's deduplication window is finite. Monitor `gateway_outbox` for `state='failed'`, queued age, expired leases and authentication/provider errors. Reconcile ambiguous sends with the provider before any manual resend. Never change a delivery key merely to bypass a failure.
 
-`provider_accepted` means the sending provider accepted the request. It does not mean inbox delivery, reading or case resolution. Staff can reply to the verified student address via their mailbox, but those replies are not ingested. Do not claim complete ticket conversation tracking until a helpdesk adapter or staff workflow is implemented.
+`provider_accepted` means the sending provider accepted the request. It does not mean inbox delivery, reading or case resolution. Signed notifications separately record delivery, delay, bounce and complaint outcomes. Staff can reply to the verified student address via their mailbox, but those replies are not ingested. Do not claim complete ticket conversation tracking until a helpdesk adapter or staff workflow is implemented.
 
 ## Verification
 
-`npm test` runs the dependency-free Node tests. Database tests: apply migrations to an isolated PostgreSQL database and run `psql ... -v ON_ERROR_STOP=1 -f tests/database.sql`. The test transaction rolls back its records. Never use a production database for these tests.
+`npm run doctor` checks local deployment configuration without printing secrets. `npm run ops -- status` reports aggregate operational status when configured.
+
+`npm test` runs the dependency-free Node tests. Database tests: apply migrations to an isolated PostgreSQL database and run both SQL files in `tests/`. On macOS with PostgreSQL installed, `npm run test:database` creates and stops a disposable local instance automatically. The test transaction rolls back its records. Never use a production database for these tests.
 
 `scripts/browser-smoke.mjs` is an optional Playwright helper. Run `npm ci` for local QA or supply `PLAYWRIGHT_MODULE` with the path to an existing installation. It uses a fresh headless Chrome profile, localhost and synthetic inputs. `BROWSER_CHANNEL` changes the browser channel. The test verifies Hebrew routing, preserved text, review, draft download, natural-language suggestions, English, mobile layout and topic links. A separate mocked-live browser test verifies the live UI without sending messages.
 
@@ -124,4 +139,4 @@ Temporary network/provider failures retry with increasing delays, up to six atte
 
 ## Before a real launch
 
-The code is a production-oriented foundation, not a complete operated service. The remaining work includes the approved actual directory, department-specific handoffs, a full privacy notice and retention/deletion implementation, sensitive-case routing, staff case management or a helpdesk integration, delivery-event webhooks, monitoring/alerts, load testing, independent Hebrew model evaluation and an accessibility review. See `docs/research.md` for the rationale and acceptance criteria.
+The code is a production-oriented foundation, not a complete operated service. The remaining work requires the service accounts, verified sending domain, approved provisional receiving arrangement, reviewed privacy/retention policy and real staging tests. Department-specific university handoffs, a confidential handling procedure, continuous operational alerts, representative capacity/accessibility checks and independent Hebrew model evaluation still need organizational input. Staff can use existing mailboxes and the local status command for a pilot; a full helpdesk is not included. See `docs/research.md` for the rationale and acceptance criteria.

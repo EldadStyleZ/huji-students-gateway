@@ -88,9 +88,13 @@ export function ticketInput(body) {
     'lang',
     'destinationId',
     'directoryVersion',
+    'noticeVersion',
   ];
   if (Object.keys(body).some((k) => !allowed.includes(k))) throw new AppError(400, 'unknown-field');
   if (
+    (body.noticeVersion !== undefined &&
+      (typeof body.noticeVersion !== 'string' ||
+        !/^[a-zA-Z0-9_-]{1,80}$/.test(body.noticeVersion))) ||
     typeof body.description !== 'string' ||
     !body.description.trim() ||
     body.description.length > 3000 ||
@@ -117,6 +121,7 @@ export function ticketInput(body) {
     lang: body.lang,
     destinationId: body.destinationId,
     directoryVersion: body.directoryVersion,
+    ...(body.noticeVersion ? { noticeVersion: body.noticeVersion } : {}),
   };
   if (resolveRoute(result).status !== 'example') throw new AppError(422, 'incomplete-route');
   return result;

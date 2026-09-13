@@ -6,7 +6,12 @@ export function createSupabase(config, fetchImpl = fetch) {
       method,
       headers: {
         apikey: key,
-        Authorization: `Bearer ${token || (admin ? config.serviceKey : config.publishableKey)}`,
+        // New sb_* API keys belong only in apikey; only JWTs are bearer tokens.
+        ...(token
+          ? { Authorization: `Bearer ${token}` }
+          : key?.startsWith('eyJ')
+            ? { Authorization: `Bearer ${key}` }
+            : {}),
         'Content-Type': 'application/json',
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -16,10 +21,11 @@ export function createSupabase(config, fetchImpl = fetch) {
     if (!response.ok) {
       if (value?.message?.includes('idempotency-conflict'))
         throw new AppError(409, 'idempotency-conflict');
-      throw new AppError(
-        response.status === 401 ? 401 : 503,
-        response.status === 401 ? 'session-expired' : 'upstream-unavailable',
-      );
+      if (response.status === 429) throw new AppError(429, 'too-many-requests');
+      if (path === '/auth/v1/verify' && [400, 401, 403, 422].includes(response.status))
+        throw new AppError(401, 'invalid-code');
+      if (token && [401, 403].includes(response.status)) throw new AppError(401, 'session-expired');
+      throw new AppError(503, 'upstream-unavailable');
     }
     return value;
   }
