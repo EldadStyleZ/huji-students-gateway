@@ -8,6 +8,10 @@ import { createSupabase } from '../src/supabase.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { startBackground } from '../src/background.mjs';
 
+// Public example vector from Svix, not a credential from a deployed endpoint:
+// https://docs.svix.com/receiving/verifying-payloads/how-manual#example-signatures
+// Its whsec_ prefix can trigger GitHub's Stripe webhook-secret detector.
+// Keep this independent vector to verify compatibility; never configure it in production.
 const reference = {
   secret: 'whsec_plJ3nmyCDGBKInavdOK15jsl',
   raw: Buffer.from('{"event_type":"ping","data":{"success":true}}'),
