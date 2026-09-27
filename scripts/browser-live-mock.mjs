@@ -16,6 +16,7 @@ const destination = {
   directoryVersion: 'test-v1',
 };
 const receipts = [];
+const verificationRequests = [];
 let attempts = 0,
   verifyAttempts = 0,
   statusChecks = 0;
@@ -38,6 +39,7 @@ await page.route('**/api/**', async (route) => {
   } else if (path === '/api/route') value = { destination };
   else if (path === '/api/auth/request-code') value = { ok: true };
   else if (path === '/api/auth/verify-code') {
+    verificationRequests.push(route.request().postDataJSON());
     if (++verifyAttempts === 1) {
       status = 401;
       value = { error: 'invalid-code' };
@@ -92,7 +94,8 @@ await page.getByRole('button', { name: 'Verify code' }).click();
 await page
   .getByText('The code is incorrect or expired. Try again or request a new code.', { exact: true })
   .waitFor();
-await page.getByLabel('Code from your email').fill('654321');
+assert.deepEqual(verificationRequests[0], { email: 'test@example.org', token: '123456' });
+await page.getByLabel('Code from your email').fill('65432109');
 await page.getByRole('button', { name: 'Verify code' }).click();
 await page.getByRole('button', { name: 'Send request to the union' }).click();
 await page.getByRole('alert').waitFor();
@@ -118,10 +121,15 @@ await page
   )
   .waitFor();
 await page.getByRole('button', { name: 'Send verification code' }).click();
-await page.getByLabel('Code from your email').fill('654321');
+await page.getByLabel('Code from your email').fill('87654321');
 await page.getByRole('button', { name: 'Verify code' }).click();
 await page.getByRole('heading', { name: 'Your request was received.' }).waitFor();
 assert.equal(receipts.length, 2, 'Re-verifying for status must not resubmit the request');
+assert.deepEqual(verificationRequests, [
+  { email: 'test@example.org', token: '123456' },
+  { email: 'test@example.org', token: '65432109' },
+  { email: 'test@example.org', token: '87654321' },
+]);
 await page.getByRole('button', { name: 'Refresh status' }).click();
 await page
   .getByText(

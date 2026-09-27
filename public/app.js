@@ -227,8 +227,9 @@ root.addEventListener('submit', async (e) => {
       render();
     }
     if (id === 'otp-form') {
-      setBusy(true);
+      // FormData omits disabled fields, so capture the code before locking the form.
       const token = new FormData(e.target).get('token');
+      setBusy(true);
       const data = await api('/api/auth/verify-code', { email: state.email, token });
       state.verifiedEmail = data.email;
       state.step = state.authReturnStep || 'review';

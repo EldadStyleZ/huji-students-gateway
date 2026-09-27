@@ -32,7 +32,9 @@ Fifteen service variables have been set, including the Supabase server secret, a
 
 After the operator added the server secret, Railway reported a successful deployment. Both `/healthz` and `/readyz` returned HTTP 200, and `/api/config` confirmed live provider connections, staging restrictions and AI disabled. The hosted operations check reported schema version 4, an empty queue and no cases needing attention.
 
-The initial browser test reached the Hebrew review screen and requested a sign-in code successfully. Supabase's Auth logs recorded its built-in sender, `noreply@mail.app.supabase.io`, so custom Resend SMTP had not taken effect at that checkpoint. Finish saving custom SMTP and the code templates before completing the authenticated request/delivery test. The MCP does not expose Auth configuration. Creating a webhook is not evidence that it has received or validated an event; the real forwarded message and signed delivery callback remain unverified.
+The first browser test used Supabase's built-in sender. After the operator saved custom SMTP, a fresh sign-in email on 28 September (local time) appeared in Resend with status `delivered`. Both saved email templates were checked in the dashboard preview: each includes `{{ .Token }}` and bilingual instructions. The saved Site URL matches the staging origin, email confirmation is enabled, and code expiration is 600 seconds with eight-digit codes.
+
+That test also exposed a frontend defect: disabling the form before reading `FormData` omitted the entered code. The handler now captures the code before disabling inputs, and the browser regression checks the actual verification payload for six- and eight-digit codes. Deploy the fix before completing the authenticated request/delivery test. Creating a webhook is not evidence that it has received or validated an event; the real forwarded message and signed delivery callback remain unverified.
 
 ## Database history
 
