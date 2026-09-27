@@ -42,9 +42,13 @@ Gemma sometimes repeated the same valid ID; the adapter now normalizes duplicate
 
 Raw results: `artifacts/evaluation-model.json`, `artifacts/evaluation-keywords.json`. Reproduce with `npm run evaluate` and the environment settings documented in the README. Different model versions, hardware, quantizations, concurrency and server configurations may change both quality and latency.
 
+## Email provider connection
+
+On 27 September 2026, one explicitly requested synthetic connection test was sent through the authenticated Resend MCP from its built-in test sender to the account owner. Resend reported `delivered`, indicating acceptance by the recipient mail server. No student request or private student information was included. This verifies the provider connection only: it does not test Supabase SMTP, the application outbox, signed webhooks, inbox placement or the full sign-in/submission flow. The application remains undeployed while hosting activation is pending.
+
 ## Outstanding external validation
 
-Before live operation: activate hosting, configure the sending domain and runtime keys; review the provisional receiving arrangement and privacy policy; validate real Supabase Auth, hosted RPCs, SMTP delivery and signed provider notifications in staging; assign staff and alert ownership; configure mailbox/Auth/backup data retention separately; test sensitive handling procedures, accessibility and representative hosted capacity. Exact university department contacts and independent Hebrew model examples still require external input. No real student data, live provider credentials or externally delivered messages were used.
+Before live operation: activate hosting, configure the sending domain and runtime keys; review the provisional receiving arrangement and privacy policy; validate real Supabase Auth, hosted RPCs, SMTP delivery and signed provider notifications in staging; assign staff and alert ownership; configure mailbox/Auth/backup data retention separately; test sensitive handling procedures, accessibility and representative hosted capacity. Exact university department contacts and independent Hebrew model examples still require external input. No real student data was used. Automated code/browser tests use mocked providers; the separate provider connection check above is the only externally delivered test message.
 
 ## Performance smoke check
 
