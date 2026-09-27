@@ -34,7 +34,13 @@ After the operator added the server secret, Railway reported a successful deploy
 
 The first browser test used Supabase's built-in sender. After the operator saved custom SMTP, a fresh sign-in email on 28 September (local time) appeared in Resend with status `delivered`. Both saved email templates were checked in the dashboard preview: each includes `{{ .Token }}` and bilingual instructions. The saved Site URL matches the staging origin, email confirmation is enabled, and code expiration is 600 seconds with eight-digit codes.
 
-That test also exposed a frontend defect: disabling the form before reading `FormData` omitted the entered code. The handler now captures the code before disabling inputs, and the browser regression checks the actual verification payload for six- and eight-digit codes. Deploy the fix before completing the authenticated request/delivery test. Creating a webhook is not evidence that it has received or validated an event; the real forwarded message and signed delivery callback remain unverified.
+That test also exposed a frontend defect: disabling the form before reading `FormData` omitted the entered code. The handler now captures the code before disabling inputs, and the browser regression checks the actual verification payload for six- and eight-digit codes. The fix was deployed successfully, and its full GitHub checks passed.
+
+## Completed staging flow, 28 September 2026
+
+A fresh eight-digit code from the configured Resend sender verified successfully through the deployed browser flow. Two invented requests were submitted: Hebrew course-registration guidance for a payment block, and English reserve-service support selected through free-text suggestions. Both were saved and delivered to the restricted test inbox. Each request had one outbox row, one sending attempt and one signed delivery event; both browser receipts showed delivery after refreshing status. Operations reported an empty queue and no cases needing attention. The two synthetic cases remain available as test records under the seven-day staging retention policy.
+
+This confirms the normal sign-in, routing, submission, background sending and delivery-status path. It does not replace production approval of recipients and privacy handling, independent routing/model evaluation, hosted failure/load testing or a verified sending domain for other recipients.
 
 ## Database history
 
