@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { AppError, emailValid, ticketInput, destinationFor, fingerprint } from './domain.mjs';
 import { classify } from './ai.mjs';
-import { topics } from '../public/routing.js';
+import { ticketEmail } from './email-template.mjs';
 import { rawBody, json as respond } from './http.mjs';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function body(req) {
@@ -159,22 +159,11 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
         )
           throw new AppError(409, 'recipient-changed');
         const data = { ...input, replyEmail: u.email, destination };
-        const title = topics.find((t) => t.id === input.topicId).name[input.lang];
         const mail = {
           from: config.mailFrom,
           to: [destination.email],
           reply_to: u.email,
-          subject: `${config.staging ? '[STAGING TEST] ' : ''}[Student gateway] ${title}`,
-          text: [
-            `Student support request / פניית סטודנט`,
-            `Topic: ${title}`,
-            `Campus: ${input.campus}`,
-            `Registration context: ${input.registrationIssue || 'Not applicable'}`,
-            `Name: ${input.name || 'Not provided'}`,
-            `Reply to: ${u.email}`,
-            '',
-            input.description,
-          ].join('\n'),
+          ...ticketEmail(input, u.email, config),
         };
         // Hash user input only; retrying after a directory edit must return the
         // original ticket and its frozen recipient, not send a second email.

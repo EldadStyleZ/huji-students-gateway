@@ -88,6 +88,22 @@ test('API creates a durable request using verified email and server-selected rec
   assert.deepEqual(call.args.p_mail.to, ['role@example.org']);
   assert.equal(call.args.p_owner, owner);
 });
+test('Hebrew email localizes fields and safely displays student text as text, never markup', async () => {
+  const s = store();
+  const description =
+    'בדיקת רישום לקורס CS101\n<img src=x onerror=alert(1)> & <!--gateway-ticket-reference-->';
+  const res = await request(createApi(config, s), {
+    data: { ...input, lang: 'he', name: '<b>שם לבדיקה</b>', description },
+  });
+  assert.equal(res.status, 201);
+  const mail = s.calls.find((c) => c.name === 'gateway_create_ticket').args.p_mail;
+  assert.match(mail.text, /קמפוס: אדמונד י׳ ספרא/);
+  assert.ok(mail.text.includes(description));
+  assert.ok(mail.html.includes('&lt;img src=x onerror=alert(1)&gt; &amp;'));
+  assert.ok(mail.html.includes('&lt;b&gt;שם לבדיקה&lt;/b&gt;'));
+  assert.ok(!mail.html.includes('<img'));
+  assert.equal(mail.html.split('<!--gateway-ticket-reference-->').length, 2);
+});
 test('API rejects cross-origin submissions', async () =>
   assert.equal(
     (await request(createApi(config, store()), { headers: { origin: 'https://evil.example' } }))

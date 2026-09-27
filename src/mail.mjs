@@ -35,7 +35,7 @@ export async function deliverOne(store, config, { fetchImpl = fetch } = {}) {
         'Content-Type': 'application/json',
         'Idempotency-Key': `gateway/${job.id}`,
       },
-      body: JSON.stringify(job.payload),
+      body: JSON.stringify(emailWithReference(job.payload, job.ticket_id)),
       signal: AbortSignal.timeout(20000),
     });
     const result = await response.json().catch(() => null);
@@ -60,3 +60,4 @@ export async function deliverOne(store, config, { fetchImpl = fetch } = {}) {
   });
   return true;
 }
+import { emailWithReference } from './email-template.mjs';

@@ -6,6 +6,8 @@
     <title>קוד כניסה לשער הפניות | Your sign-in code</title>
   </head>
   <body
+    lang="he"
+    dir="rtl"
     style="
       margin: 0;
       padding: 24px;
@@ -13,20 +15,39 @@
       color: #172334;
       font-family: Arial, sans-serif;
       line-height: 1.6;
+      direction: rtl;
+      text-align: right;
     "
   >
-    <div style="max-width: 480px; margin: 0 auto">
-      <h1 style="font-size: 22px">קוד כניסה לשער הפניות</h1>
-      <p>יש להזין את הקוד הבא במסך ההתחברות:</p>
+    <div
+      lang="he"
+      dir="rtl"
+      style="max-width: 480px; margin: 0 auto; direction: rtl; text-align: right"
+    >
+      <h1 dir="rtl" style="font-size: 22px; direction: rtl; text-align: right">
+        קוד כניסה לשער הפניות
+      </h1>
+      <p dir="rtl" style="direction: rtl; text-align: right">יש להזין את הקוד הבא במסך ההתחברות:</p>
       <p
         dir="ltr"
-        style="font-size: 30px; font-weight: bold; letter-spacing: 4px; text-align: center"
+        style="
+          font-size: 30px;
+          font-weight: bold;
+          letter-spacing: 4px;
+          direction: ltr;
+          unicode-bidi: isolate;
+          text-align: center;
+        "
       >
         {{ .Token }}
       </p>
-      <p>הקוד תקף למשך 10 דקות. אין לשתף אותו עם אחרים.</p>
-      <p>אם לא ביקשת להיכנס, אפשר להתעלם מההודעה.</p>
-      <div lang="en" dir="ltr" style="margin-top: 28px; text-align: left">
+      <p dir="rtl" style="direction: rtl; text-align: right">
+        הקוד תקף למשך 10 דקות. אין לשתף אותו עם אחרים.
+      </p>
+      <p dir="rtl" style="direction: rtl; text-align: right">
+        אם לא ביקשת להיכנס, אפשר להתעלם מההודעה.
+      </p>
+      <div lang="en" dir="ltr" style="margin-top: 28px; direction: ltr; text-align: left">
         <h2 style="font-size: 20px">Your sign-in code</h2>
         <p>
           Enter the code above on the sign-in screen. It expires in 10 minutes. Do not share it.

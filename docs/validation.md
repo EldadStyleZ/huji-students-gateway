@@ -1,10 +1,18 @@
 # Validation record
 
-Updated implementation validation: 27 September 2026. The model experiment below was performed on 10 September 2026 and was not rerun for this change. Automated tests use synthetic messages and contacts; they do not send external email or OTP.
+Updated implementation validation: 28 September 2026. The model experiment below was performed on 10 September 2026 and was not rerun for this change. Automated tests use synthetic messages and contacts; they do not send external email or OTP.
+
+## Hebrew email layout
+
+Request notifications now include localized HTML and a plain-text alternative. Hebrew content has explicit RTL direction and right alignment inside the body, so removing outer document attributes does not reverse the layout. Email addresses and database request references use separate LTR spans; all student text is HTML-escaped. The sender fills the database reference without mutating the frozen outbox payload, preserving identical retry content. Existing queued plain-text mail remains compatible.
+
+Both hosted sign-in templates (confirmation and magic link/OTP) were updated from `config/auth-email.html`. Hebrew instructions explicitly align right; the code stays LTR and centered, and English stays LTR and left-aligned. Browser previews at 360px width were checked with mixed Hebrew/English text, parentheses, course numbers, an email address, a request reference, and a leading-zero sample code. Request previews were also checked after removing the outer HTML/body direction. This is not an exhaustive Outlook/mobile-client compatibility test.
+
+All 55 Node tests and formatting checks passed, including HTML escaping and stable reference/retry checks.
 
 ## Automated code tests
 
-53 Node tests pass. Staging checks cover unchanged production configuration, test-only routing and authentication, mismatched verified identities, renewed recipient review and rejection of queued messages with other recipients or CC/BCC. New checks include the independent Svix signature vector, tampered/stale/future webhook signatures, minimal event payloads, real local HTTP routing and asset caching, readiness, current Supabase API-key headers, expired-code/session error mapping, policy-version replay and shutdown during an active send. They cover Hebrew/English keyword routing, unknown and ambiguous topics, approved and expired directories, recipient changes, duplicate submissions, ownership checks, CSRF, input limits, model output validation and fallback, and mail retry behaviour.
+55 Node tests pass. Staging checks cover unchanged production configuration, test-only routing and authentication, mismatched verified identities, renewed recipient review and rejection of queued messages with other recipients or CC/BCC. New checks include the independent Svix signature vector, tampered/stale/future webhook signatures, minimal event payloads, real local HTTP routing and asset caching, readiness, current Supabase API-key headers, expired-code/session error mapping, policy-version replay and shutdown during an active send. They cover Hebrew/English keyword routing, unknown and ambiguous topics, approved and expired directories, recipient changes, duplicate submissions, ownership checks, CSRF, input limits, model output validation and fallback, and mail retry behaviour.
 
 ## PostgreSQL
 
