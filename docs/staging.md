@@ -24,6 +24,14 @@ For a first test, Resend's `onboarding@resend.dev` sender can send only to the e
 
 Configure Supabase SMTP with the chosen sender and a separate sending-only Resend key, following [setup.md](setup.md). The MCP connection does not configure runtime credentials or SMTP automatically. Put secret keys directly into hosting variables; never paste them into a task or commit them.
 
+## Hosting preparation, 27 September 2026
+
+The staging service is connected to this repository. Its assigned origin is `https://huji-students-gateway-production.up.railway.app`, with port `4173` and healthcheck `/readyz`. The Railway environment and generated hostname use the label `production`; the application is explicitly configured with `GATEWAY_STAGE=staging` and a single restricted tester inbox.
+
+Fourteen service variables have been set, including separate runtime email credentials, the database publishable key and the webhook signing secret. Two sending-only Resend keys were created: one for application messages and a separate one for Supabase SMTP. The delivery webhook subscribes to the six events listed in the setup guide. Local credential files are ignored by Git and readable only by their owner; no credential values are recorded here.
+
+The remaining setup is the Supabase server secret, custom SMTP, code email templates, ten-minute code expiration and the Auth Site URL. The MCP does not expose the server secret or Auth configuration. Credentials were staged without requesting a new deployment. The existing deployment crashed because configuration was initially empty; a healthy deployment and full authentication/request/delivery test are still pending. Creating a webhook is not evidence that it has received or validated an event.
+
 ## Database history
 
 The original four migrations were applied successfully to the designated empty staging project on 27 September 2026. Their filenames now match the versions recorded by Supabase:

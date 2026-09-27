@@ -78,7 +78,7 @@ The research compares Gemma, Qwen and multilingual E5. E5 retrieval is a recomme
 
 Deploy this repository as **one Railway service** running `node server.mjs`. The same process serves the UI/API and runs the background sender and retention maintenance. PostgreSQL provides the durable queue; no additional queue server or worker deployment is needed. Resend also supplies Supabase's SMTP sender for sign-in codes.
 
-The Dockerfile runs as a non-root user and refuses production startup in demo mode. `railway.json` checks `/readyz` for schema/database/background readiness; `/healthz` reports process liveness. Set `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=35` and keep the service awake. See the [setup guide](docs/setup.md) for account, DNS, variables and staging steps.
+The Dockerfile runs as a non-root user and refuses production startup in demo mode. Configure Railway's healthcheck as `/readyz` for schema/database/background readiness; `/healthz` reports process liveness. Set `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=35` and keep the service awake. See the [setup guide](docs/setup.md) for account, DNS, variables and staging steps.
 
 Static assets are compressed and read into memory at startup, with ETag revalidation. Local synthetic HTTP checks and asset sizes are recorded in `artifacts/performance-local.json`; these exclude external service/network latency. Restart the local server after edits because this small runtime does not include hot reload.
 

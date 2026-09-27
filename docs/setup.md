@@ -26,7 +26,7 @@ Start with a staging environment. There are no live credentials configured in th
 | Sender address | Your verified sender               |
 | Sender name    | The union's service name           |
 
-These settings follow [Resend's Supabase guide](https://resend.com/docs/send-with-supabase-smtp). Keep email confirmation enabled. In Supabase's email templates, include `{{ .Token }}` for both **Confirm signup** and **Magic link** so first-time and returning users receive a code. Set the code lifetime to 10 minutes and review Auth email/send limits for your pilot size. The app accepts 6–10 digit codes.
+These settings follow [Resend's Supabase guide](https://resend.com/docs/send-with-supabase-smtp). Keep email confirmation enabled. In Supabase's email templates, use the contents of [auth-email.html](../config/auth-email.html) for both **Confirm signup** and **Magic link** so first-time and returning users receive a code. Suggested subject: `קוד כניסה לשער הפניות | Your sign-in code`. Under **Authentication → Sign In / Providers → Email**, set **Email OTP expiration** to `600` seconds (10 minutes), matching the template, and review Auth email/send limits for your pilot size. The app accepts 6–10 digit codes. [Supabase OTP configuration](https://supabase.com/docs/guides/auth/auth-email-passwordless)
 
 ## 3. Review the two small configuration files
 
@@ -43,7 +43,7 @@ The developer can make these edits for you after you provide the decisions. You 
 ## 4. Deploy one Railway service
 
 1. Create a project → deploy from GitHub → select `EldadStyleZ/huji-students-gateway`.
-2. Railway reads the Dockerfile and `railway.json`. Create **one service**. Generate its public HTTPS domain and use that exact origin below, without a final `/`.
+2. Create **one service** using the repository's `Dockerfile`. In its deployment settings, set healthcheck path `/readyz`, timeout `120` seconds, restart policy **On Failure**, maximum retries `10`, and disable sleeping. Generate its public HTTPS domain and use that exact origin below, without a final `/`. Railway has deprecated `railway.json` configuration; the checked-in file remains a legacy reference. Set these options on the service directly instead of relying on that file. [Railway migration guidance](https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code)
 3. Open **Variables** and enter the values in this table. Never paste API keys into chat, commit them to GitHub, or prefix them with a browser/public environment variable convention.
 
 | Variable                              | Value                                               |
@@ -60,7 +60,7 @@ The developer can make these edits for you after you provide the decisions. You 
 | `ROUTING_POLICY_APPROVED`             | `true`, after step 3                                |
 | `RAILWAY_DEPLOYMENT_DRAINING_SECONDS` | `35`                                                |
 
-Generate `RATE_LIMIT_SECRET` locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` and paste the result directly into Railway. Let Railway assign `PORT`. Leave `BACKGROUND_WORKER` unset; the sender is included by default. Leave all `AI_*` variables unset for the initial pilot.
+Generate `RATE_LIMIT_SECRET` locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` and paste the result directly into Railway. Let Railway assign `PORT`, or explicitly set `PORT=4173` when the public domain targets port `4173`. The domain's target port must match the application's port. Leave `BACKGROUND_WORKER` unset; the sender is included by default. Leave all `AI_*` variables unset for the initial pilot.
 
 4. Keep the service running continuously; do not enable sleeping/serverless suspension. The sender checks Postgres for queued work. The healthcheck is `/readyz`, which waits for database/schema/background readiness. Railway checks this during deployment; arrange ongoing operational monitoring separately. Give shutdown the 35-second grace period above. [Railway healthchecks](https://docs.railway.com/deployments/healthchecks), [draining variable](https://docs.railway.com/variables/reference)
 5. Set Supabase Auth's Site URL to the same public HTTPS origin. Deploy and open the URL. A failed deployment before configuration is complete is intentional; the logs identify missing configuration without showing keys.
