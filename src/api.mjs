@@ -21,6 +21,10 @@ function cookieToken(req) {
 }
 export function createApi(config, store, { classifyImpl = classify } = {}) {
   const localLimits = new Map();
+  function checkStagingEmail(email) {
+    if (config.staging && email?.toLowerCase() !== config.stagingInbox)
+      throw new AppError(403, 'staging-account-only');
+  }
   async function limit(key, max, seconds) {
     if (config.live) {
       const bucket = createHmac('sha256', config.rateSecret).update(key).digest('hex');
@@ -48,6 +52,7 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
     const u = await store.user(token);
     if (!u?.id || !u.email_confirmed_at || !emailValid(u.email))
       throw new AppError(401, 'sign-in-required');
+    checkStagingEmail(u.email);
     return u;
   }
   return async (req, res, path) => {
@@ -55,6 +60,7 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
       if (req.method === 'GET' && path === '/api/config') {
         respond(res, 200, {
           live: config.live,
+          staging: Boolean(config.staging),
           aiEnabled: Boolean(config.aiBase),
           aiNotice: config.aiNotice,
           noticeVersion: config.service?.noticeVersion,
@@ -98,6 +104,7 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
         const b = await body(req);
         if (!emailValid(b?.email?.trim())) throw new AppError(422, 'invalid-email');
         const email = b.email.trim().toLowerCase();
+        checkStagingEmail(email);
         await limit(`otp:${email}`, 1, 60);
         await limit('otp-global', 30, 60);
         await store.requestCode(email);
@@ -108,10 +115,12 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
         const b = await body(req);
         if (!emailValid(b?.email) || typeof b.token !== 'string' || !/^\d{6,10}$/.test(b.token))
           throw new AppError(422, 'invalid-code');
+        checkStagingEmail(b.email);
         await limit(`verify:${b.email.toLowerCase()}`, 8, 300);
         const session = await store.verifyCode(b.email, b.token);
         if (!session?.access_token || !session.user?.email_confirmed_at)
           throw new AppError(401, 'invalid-code');
+        checkStagingEmail(session.user.email);
         res.setHeader(
           'Set-Cookie',
           `__Host-gateway=${session.access_token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${Math.min(session.expires_in || 3600, 3600)}`,
@@ -155,7 +164,7 @@ export function createApi(config, store, { classifyImpl = classify } = {}) {
           from: config.mailFrom,
           to: [destination.email],
           reply_to: u.email,
-          subject: `[Student gateway] ${title}`,
+          subject: `${config.staging ? '[STAGING TEST] ' : ''}[Student gateway] ${title}`,
           text: [
             `Student support request / פניית סטודנט`,
             `Topic: ${title}`,

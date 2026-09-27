@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { emailValid, validateDirectory, destinationFor } from './domain.mjs';
 import { topics, campuses, registrationOptions } from '../public/routing.js';
+import { configureStaging } from './staging.mjs';
 export async function loadConfig(env = process.env, supplied = {}) {
   const live = env.GATEWAY_MODE === 'live';
   if (env.NODE_ENV === 'production' && !live)
@@ -31,6 +32,7 @@ export async function loadConfig(env = process.env, supplied = {}) {
       supplied.service ||
       JSON.parse(await readFile(new URL('../config/service.json', import.meta.url), 'utf8')),
   };
+  configureStaging(config, env);
   validateDirectory(config.directory);
   if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535)
     throw new Error('PORT must be an integer from 1 to 65535');
@@ -81,7 +83,7 @@ export async function loadConfig(env = process.env, supplied = {}) {
       policy.privacyEmail.endsWith('.invalid')
     )
       throw new Error('Complete and approve config/service.json before live intake');
-    if (env.ROUTING_POLICY_APPROVED !== 'true')
+    if (!config.staging && env.ROUTING_POLICY_APPROVED !== 'true')
       throw new Error('Approve routing policy before enabling live intake');
     if (
       !config.directory.entries.some(

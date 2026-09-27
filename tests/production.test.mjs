@@ -7,6 +7,7 @@ import { createGatewayServer } from '../src/server.mjs';
 import { createSupabase } from '../src/supabase.mjs';
 import { loadConfig } from '../src/config.mjs';
 import { startBackground } from '../src/background.mjs';
+import { privacyPage } from '../src/privacy.mjs';
 
 // Public example vector from Svix, not a credential from a deployed endpoint:
 // https://docs.svix.com/receiving/verifying-payloads/how-manual#example-signatures
@@ -237,6 +238,56 @@ test('live startup validates the fallback, every route, policy and numeric limit
         entries: [...directory.entries, { ...directory.entries[0], id: 'duplicate' }],
       },
     }),
+  );
+});
+test('staging redirects every route without approving or modifying the production directory', async () => {
+  const unapproved = {
+    ...directory,
+    entries: directory.entries.map((e) => ({ ...e, approved: false })),
+  };
+  const original = structuredClone(unapproved);
+  const env = {
+    ...liveEnv,
+    GATEWAY_STAGE: 'staging',
+    STAGING_INBOX: ' TESTER@example.org ',
+    ROUTING_POLICY_APPROVED: 'false',
+  };
+  const config = await loadConfig(env, {
+    directory: unapproved,
+    service: { ...service, approved: false },
+  });
+  assert.deepEqual(unapproved, original);
+  assert.ok(config.directory.entries.every((e) => e.email === 'tester@example.org' && e.approved));
+  assert.equal(config.stagingInbox, 'tester@example.org');
+  assert.equal(config.service.retentionDays, 7);
+  assert.equal(config.service.privacyEmail, 'tester@example.org');
+  assert.match(config.directory.version, /^staging-/);
+  const changed = await loadConfig(
+    { ...env, STAGING_INBOX: 'another@example.org' },
+    { directory: unapproved, service },
+  );
+  assert.notEqual(
+    config.directory.version,
+    changed.directory.version,
+    'A new test recipient requires a fresh review',
+  );
+  assert.match(privacyPage(config), /Test environment only/);
+  assert.match(privacyPage(config), /after 7 days/);
+  assert.doesNotMatch(privacyPage(config), /are emailed to the union role/);
+});
+test('staging requires an explicit valid inbox; production cannot silently ignore a staging inbox', async () => {
+  for (const env of [
+    { GATEWAY_STAGE: 'stagng' },
+    { GATEWAY_STAGE: 'staging' },
+    { GATEWAY_STAGE: 'staging', STAGING_INBOX: 'not-an-email' },
+    { STAGING_INBOX: 'tester@example.org' },
+  ])
+    await assert.rejects(loadConfig({ ...liveEnv, ...env }, { directory, service }));
+  await assert.rejects(
+    loadConfig(
+      { ...liveEnv, GATEWAY_STAGE: 'production', ROUTING_POLICY_APPROVED: 'false' },
+      { directory, service },
+    ),
   );
 });
 test('background shutdown drains an in-flight send and does not claim another job', async () => {

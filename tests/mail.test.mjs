@@ -68,3 +68,42 @@ test('database acknowledgement failure is propagated for lease recovery', async 
     /database offline/,
   );
 });
+test('staging blocks queued messages to real roles, extra recipients and old test accounts', async () => {
+  for (const payload of [
+    { to: ['role@example.org'] },
+    { to: ['tester@example.org', 'role@example.org'] },
+    { to: ['tester@example.org'], cc: ['role@example.org'] },
+    { to: ['tester@example.org'], bcc: ['role@example.org'] },
+    { to: ['tester@example.org'], reply_to: 'old-test@example.org' },
+    { to: [42] },
+  ]) {
+    let acknowledgement;
+    await deliverOne(
+      {
+        rpc: async (name, args) => {
+          if (name === 'gateway_claim_email') return { id: 'job-1', lease_id: 'lease-1', payload };
+          acknowledgement = args;
+        },
+      },
+      { staging: true, stagingInbox: 'tester@example.org' },
+      { fetchImpl: async () => assert.fail('Unsafe staging mail must not leave the process') },
+    );
+    assert.equal(acknowledgement.p_error, 'staging-recipient-blocked');
+    assert.equal(acknowledgement.p_retryable, false);
+  }
+});
+test('staging can deliver an allowed message with the same idempotency protection', async () => {
+  const { calls, store } = setup();
+  await deliverOne(
+    store,
+    { mailKey: 'test', staging: true, stagingInbox: 'role@example.org' },
+    {
+      fetchImpl: async (url, options) => {
+        assert.deepEqual(JSON.parse(options.body).to, ['role@example.org']);
+        assert.equal(options.headers['Idempotency-Key'], 'gateway/job-1');
+        return { ok: true, json: async () => ({ id: 'test-delivery' }) };
+      },
+    },
+  );
+  assert.equal(calls[1].args.p_provider, 'test-delivery');
+});

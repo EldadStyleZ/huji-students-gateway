@@ -1,6 +1,29 @@
 export async function deliverOne(store, config, { fetchImpl = fetch } = {}) {
   const job = await store.rpc('gateway_claim_email', {});
   if (!job) return false;
+  // Also protect frozen jobs already in the queue when staging configuration changes.
+  if (
+    config.staging &&
+    (!config.stagingInbox ||
+      !Array.isArray(job.payload?.to) ||
+      job.payload.to.length !== 1 ||
+      typeof job.payload.to[0] !== 'string' ||
+      job.payload.to[0].toLowerCase() !== config.stagingInbox ||
+      job.payload.cc !== undefined ||
+      job.payload.bcc !== undefined ||
+      (job.payload.reply_to !== undefined &&
+        (typeof job.payload.reply_to !== 'string' ||
+          job.payload.reply_to.toLowerCase() !== config.stagingInbox)))
+  ) {
+    await store.rpc('gateway_finish_email', {
+      p_id: job.id,
+      p_lease: job.lease_id,
+      p_provider: null,
+      p_error: 'staging-recipient-blocked',
+      p_retryable: false,
+    });
+    return true;
+  }
   let provider = null,
     error = null,
     retryable = true;

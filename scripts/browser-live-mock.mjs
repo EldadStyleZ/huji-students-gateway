@@ -1,5 +1,6 @@
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 import assert from 'node:assert/strict';
+const base = process.env.GATEWAY_TEST_ORIGIN || 'http://127.0.0.1:4173';
 const browser = await chromium.launch({
   headless: true,
   channel: process.env.BROWSER_CHANNEL || 'chrome',
@@ -18,12 +19,19 @@ const receipts = [];
 let attempts = 0,
   verifyAttempts = 0,
   statusChecks = 0;
+let staging = false;
 await page.route('**/api/**', async (route) => {
   const path = new URL(route.request().url()).pathname;
   let status = 200,
     value;
   if (path === '/api/config')
-    value = { live: true, aiEnabled: false, aiNotice: '', noticeVersion: 'union-intake-v2' };
+    value = {
+      live: true,
+      staging,
+      aiEnabled: false,
+      aiNotice: '',
+      noticeVersion: 'union-intake-v2',
+    };
   else if (path === '/api/auth/session') {
     status = 401;
     value = { error: 'sign-in-required' };
@@ -64,7 +72,7 @@ await page.route('**/api/**', async (route) => {
   } else throw new Error('Unexpected API request: ' + path);
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
 });
-await page.goto('http://127.0.0.1:4173/?topic=course-registration&lang=en');
+await page.goto(`${base}/?topic=course-registration&lang=en`);
 await page.getByLabel('Edmond J. Safra (Givat Ram)', { exact: true }).check();
 await page.getByLabel('A specific course or academic approval issue', { exact: true }).check();
 await page.getByRole('button', { name: 'Find my contact', exact: true }).click();
@@ -132,6 +140,14 @@ assert.ok(
 );
 await page.getByRole('button', { name: 'Sign out' }).click();
 await page.getByRole('heading', { name: 'A question. A clear way forward.' }).waitFor();
+assert.deepEqual(errors, []);
+staging = true;
+await page.goto(`${base}/?lang=he`);
+await page.locator('[data-staging-notice]').waitFor();
+assert.match(await page.locator('[data-staging-notice]').textContent(), /סביבת בדיקות בלבד/);
+await page.getByRole('button', { name: 'English', exact: true }).click();
+assert.match(await page.locator('[data-staging-notice]').textContent(), /Test environment/);
+assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
 assert.deepEqual(errors, []);
 await browser.close();
 console.log(

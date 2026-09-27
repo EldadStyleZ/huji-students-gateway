@@ -79,7 +79,7 @@ function header() {
   return `<header class="header"><button class="brand" data-action="home" aria-label="${t('לדף הבית', 'Home')}"><span class="brand-mark">${icon('arrow')}</span><span><strong>${t('כתובת אחת', 'One address')}</strong><small>${t('שער הפניות לסטודנטים', 'The student support gateway')}</small></span></button><nav aria-label="${t('ניווט ראשי', 'Main navigation')}"><a href="/privacy" target="_blank" rel="noopener">${t('פרטיות', 'Privacy')}</a>${state.verifiedEmail ? button('logout', t('יציאה', 'Sign out'), 'text-button') : ''}<button class="language" data-action="language">${icon('globe')} ${t('English', 'עברית')}</button></nav></header>`;
 }
 function footer() {
-  return `<footer><span>${t('אגודת הסטודנטים והסטודנטיות בעברית', 'Hebrew University Student Union')} · <a href="/privacy" target="_blank" rel="noopener">${t('פרטיות', 'Privacy')}</a></span><span>${settings.live ? t('שירות פניות · הכוונה לפי ספר תפקידים מאושר', 'Student support · approved role directory') : t('אב טיפוס · מסלולי ההכוונה להמחשה בלבד', 'Prototype · illustrative routing only')}</span></footer>`;
+  return `<footer><span>${t('אגודת הסטודנטים והסטודנטיות בעברית', 'Hebrew University Student Union')} · <a href="/privacy" target="_blank" rel="noopener">${t('פרטיות', 'Privacy')}</a></span><span>${settings.staging ? t('סביבת בדיקות בלבד', 'Test environment only') : settings.live ? t('שירות פניות · הכוונה לפי ספר תפקידים מאושר', 'Student support · approved role directory') : t('אב טיפוס · מסלולי ההכוונה להמחשה בלבד', 'Prototype · illustrative routing only')}</span></footer>`;
 }
 function home() {
   return `<section class="hero"><span class="eyebrow">${t('קל יותר למצוא את מי שיעזור', 'A LITTLE LESS RUNAROUND')}</span>${heading(t('יש שאלה.<br>יש למי לפנות.', 'A question.<br>A clear way forward.'), t('לא צריך להכיר את כל בעלי התפקידים. נתחיל במה שצריך, ונמצא יחד את הכתובת המתאימה.', 'You don’t need to know every role or email address. Start with what you need, and find the right place to ask.'))}<div class="hero-note"><span class="dot"></span>${t('הכוונה ללא התחברות · אפשר לחזור ולשנות בכל שלב', 'Browse without signing in · change your answers at any time')}</div></section><section class="workspace"><div class="section-bar"><h2>${t('איך נוח לך להתחיל?', 'How would you like to start?')}</h2><div class="segmented" role="group" aria-label="${t('דרך ההכוונה', 'Routing method')}">${button('guided', t('בחירה לפי נושא', 'Choose a topic'), 'segment', `aria-pressed="${state.mode === 'guided'}"`)}${button('natural', `${icon('spark')}${t('במילים שלי', 'In my own words')}`, 'segment', `aria-pressed="${state.mode === 'natural'}"`)}</div></div>${state.mode === 'guided' ? `<div class="category-grid">${categories.map((c) => `<button class="category" data-category="${c.id}"><span class="category-icon">${icon(c.icon)}</span><span class="category-copy"><strong>${label(c.name)}</strong><small>${label(c.description)}</small></span>${icon('arrow', 'direction')}</button>`).join('')}</div>` : natural()}<div class="direct-links"><span>${t('קיצורי דרך', 'Quick starts')}</span>${button('quick-course', t('לא מצליחים להירשם לקורס?', 'Can’t register for a course?'), 'text-button')}${button('quick-reserves', t('חזרה ממילואים', 'Returning from reserve service'), 'text-button')}</div></section><section class="how"><div><span>01</span><h3>${t('מספרים מה קרה', 'Tell us what happened')}</h3><p>${t('בוחרים נושא או כותבים בקצרה.', 'Choose a topic or write a short description.')}</p></div><div><span>02</span><h3>${t('מוצאים את הכתובת', 'Find the right contact')}</h3><p>${t('רואים מי יכול לעזור, ולמה.', 'See who can help, and why they fit.')}</p></div><div><span>03</span><h3>${t('מחליטים איך להמשיך', 'Choose your next step')}</h3><p>${t('פונים לאוניברסיטה או מבקשים סיוע מהאגודה.', 'Contact the university or ask the union for support.')}</p></div></section>`;
@@ -138,7 +138,10 @@ function done() {
 function render(focus = true) {
   document.documentElement.lang = state.lang;
   document.documentElement.dir = state.lang === 'he' ? 'rtl' : 'ltr';
-  root.innerHTML = `${header()}<main id="main">${state.offline ? `<p class="notice">${t('לא הצלחנו להתחבר לשירות. אפשר לצפות בהדגמה בלבד; פניות לא יישלחו.', 'The service is unavailable. You can browse a preview; requests will not be sent.')}</p>` : ''}<p id="activity" class="activity" role="status" aria-live="polite"></p>${state.step === 'home' ? home() : flow()}</main>${footer()}`;
+  const stagingNotice = settings.staging
+    ? `<p class="notice" data-staging-notice>${t('סביבת בדיקות בלבד — יש להשתמש בפרטים מומצאים. הפניות נשלחות לתיבת הבדיקות בלבד, ללא טיפול של האגודה.', 'Test environment — use invented details. Requests go only to the test inbox and are not handled by union staff.')}</p>`
+    : '';
+  root.innerHTML = `${header()}<main id="main">${stagingNotice}${state.offline ? `<p class="notice">${t('לא הצלחנו להתחבר לשירות. אפשר לצפות בהדגמה בלבד; פניות לא יישלחו.', 'The service is unavailable. You can browse a preview; requests will not be sent.')}</p>` : ''}<p id="activity" class="activity" role="status" aria-live="polite"></p>${state.step === 'home' ? home() : flow()}</main>${footer()}`;
   if (state.busy) setBusy(true);
   document.title = `${t('כתובת אחת', 'One address')} — ${state.step === 'home' ? t('שער הפניות לסטודנטים', 'Student support gateway') : t('הכוונה ופנייה', 'Routing and request')}`;
   if (focus) {
@@ -443,6 +446,10 @@ function showError(error) {
     document.querySelector('#main').prepend(box);
   }
   const codes = {
+    'staging-account-only': t(
+      'ההתחברות בסביבת הבדיקות זמינה רק לכתובת הבדיקה שהוגדרה.',
+      'Sign-in in this test environment is restricted to the configured test address.',
+    ),
     'verify-again': t(
       'האימות פג. יש לאמת שוב את הדוא״ל; פרטי הפנייה נשמרו בדף.',
       'Your session expired. Verify your email again; your request details are still on this page.',

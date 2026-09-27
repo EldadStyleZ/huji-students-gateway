@@ -17,16 +17,19 @@ if (!env.SUPABASE_SECRET_KEY && !env.SUPABASE_SERVICE_ROLE_KEY)
 const directory = JSON.parse(await readFile(new URL('../config/directory.json', import.meta.url)));
 const service = JSON.parse(await readFile(new URL('../config/service.json', import.meta.url)));
 if (
+  !(env.GATEWAY_STAGE === 'staging') &&
   !directory.entries.some(
     (e) =>
       e.approved && e.roleId === 'triage' && e.topicIds.includes('*') && e.campusIds.includes('*'),
   )
 )
   issues.push('Review config/directory.json and approve the monitored fallback mailbox.');
-if (!service.approved || !service.privacyEmail)
+if (env.GATEWAY_STAGE !== 'staging' && (!service.approved || !service.privacyEmail))
   issues.push('Set the privacy contact, review retention/notice and approve config/service.json.');
-if (env.ROUTING_POLICY_APPROVED !== 'true')
+if (env.GATEWAY_STAGE !== 'staging' && env.ROUTING_POLICY_APPROVED !== 'true')
   issues.push('After reviewing the provisional mapping, set ROUTING_POLICY_APPROVED=true.');
+if (env.GATEWAY_STAGE === 'staging' && !env.STAGING_INBOX)
+  issues.push('Set STAGING_INBOX to the tester’s mailbox. Only that address can sign in.');
 if (!env.RESEND_WEBHOOK_SECRET)
   console.log(
     'NOTE: Add RESEND_WEBHOOK_SECRET after creating the Resend webhook to track delivery.',

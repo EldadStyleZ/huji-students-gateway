@@ -187,3 +187,69 @@ test('sign out clears the HttpOnly cookie and remains protected by Origin', asyn
     403,
   );
 });
+test('staging rejects non-test OTP requests, verification and existing sessions before contacting providers', async () => {
+  const s = store();
+  s.requestCode = async () => assert.fail('Must not send OTP to another account');
+  s.verifyCode = async () => assert.fail('Must not verify another account');
+  const api = createApi({ ...config, staging: true, stagingInbox: 'tester@example.org' }, s);
+  for (const options of [
+    { path: '/api/auth/request-code', data: { email: 'other@example.org' } },
+    { path: '/api/auth/verify-code', data: { email: 'other@example.org', token: '123456' } },
+    { path: '/api/auth/session', method: 'GET' },
+    { path: '/api/tickets' },
+    { path: '/api/tickets/' + key, method: 'GET' },
+  ]) {
+    const response = await request(api, options);
+    assert.equal(response.status, 403);
+    assert.equal(response.value.error, 'staging-account-only');
+  }
+  assert.equal(s.calls.length, 0);
+});
+test('staging accepts the test account but rejects a mismatched verified identity', async () => {
+  const s = store();
+  let requested;
+  s.requestCode = async (email) => {
+    requested = email;
+  };
+  s.verifyCode = async () => ({
+    access_token: 'test-token',
+    user: { email: 'other@example.org', email_confirmed_at: '2026-01-01' },
+  });
+  const api = createApi({ ...config, staging: true, stagingInbox: 'tester@example.org' }, s);
+  assert.equal(
+    (
+      await request(api, {
+        path: '/api/auth/request-code',
+        data: { email: ' TESTER@example.org ' },
+      })
+    ).status,
+    200,
+  );
+  assert.equal(requested, 'tester@example.org');
+  const verified = await request(api, {
+    path: '/api/auth/verify-code',
+    data: { email: 'tester@example.org', token: '123456' },
+  });
+  assert.equal(verified.status, 403);
+  assert.equal(verified.headers['Set-Cookie'], undefined);
+});
+test('staging submission freezes only the test recipient and labels the message', async () => {
+  const s = store();
+  const api = createApi(
+    {
+      ...config,
+      staging: true,
+      stagingInbox: 'verified@example.org',
+      directory: {
+        version: 'staging-test',
+        entries: [{ ...entry, email: 'verified@example.org' }],
+      },
+    },
+    s,
+  );
+  const response = await request(api, { data: { ...input, directoryVersion: 'staging-test' } });
+  assert.equal(response.status, 201);
+  const saved = s.calls.find((x) => x.name === 'gateway_create_ticket');
+  assert.deepEqual(saved.args.p_mail.to, ['verified@example.org']);
+  assert.match(saved.args.p_mail.subject, /^\[STAGING TEST\]/);
+});

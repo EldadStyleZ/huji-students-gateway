@@ -2,7 +2,7 @@
 
 The recommended pilot uses **one Railway service + one Supabase project + Resend**. Resend handles both sign-in codes and forwarded requests. AI is optional and starts off. No separate frontend host, queue server, analytics service or public admin dashboard is required.
 
-Start with a staging environment. There are no live credentials configured in this repository, and nothing has been deployed or emailed on your behalf.
+Start with a staging environment. There are no live credentials configured in this repository. Follow [staging setup](staging.md) for the restricted test inbox and current migration history; database preparation, application deployment and email verification are separate steps.
 
 ## 1. Prepare the accounts and sending domain
 
@@ -36,7 +36,7 @@ Before sending real requests:
 
 - Have the receiving teams agree to monitor the proposed routes, including the **office mailbox as the provisional general-help fallback**. For each active directory entry, set `approved` to `true`, fill `approvedBy` and choose a `validUntil` review date. The checked-in entries remain unapproved and expire on 13 December 2026 as a provisional review reminder.
 - In `config/service.json`, fill `privacyEmail`, choose `retentionDays` (the proposed value is 90), edit the Hebrew/English response expectations, and review `/privacy`. Set `approved` to `true` once the operator agrees to the actual data handling. Change `noticeVersion` whenever the material notice changes.
-- For staging, use a reviewed staging directory whose entries all point to mailboxes you control. Do not test by sending requests to the real role addresses.
+- For staging, set `GATEWAY_STAGE=staging` and `STAGING_INBOX` to your test mailbox. This preserves the mapping while redirecting all roles to that inbox, restricts sign-in to that address, and uses a seven-day test-data policy. Use a separate database. Leave the production configuration files unapproved until their actual review. See [staging setup](staging.md).
 
 The developer can make these edits for you after you provide the decisions. You do not need to learn the JSON format. This is service configuration, not a requirement to finish every detailed role definition before a pilot.
 

@@ -1,22 +1,22 @@
 # Validation record
 
-Updated implementation validation: 13 September 2026. The model experiment below was performed on 10 September 2026 and was not rerun for this change. All student messages and contact details used in tests were synthetic. No external email or OTP was sent.
+Updated implementation validation: 27 September 2026. The model experiment below was performed on 10 September 2026 and was not rerun for this change. Automated tests use synthetic messages and contacts; they do not send external email or OTP.
 
 ## Automated code tests
 
-46 Node tests pass. New checks include the independent Svix signature vector, tampered/stale/future webhook signatures, minimal event payloads, real local HTTP routing and asset caching, readiness, current Supabase API-key headers, expired-code/session error mapping, policy-version replay and shutdown during an active send. They cover Hebrew/English keyword routing, unknown and ambiguous topics, approved and expired directories, recipient changes, duplicate submissions, ownership checks, CSRF, input limits, model output validation and fallback, and mail retry behaviour.
+53 Node tests pass. Staging checks cover unchanged production configuration, test-only routing and authentication, mismatched verified identities, renewed recipient review and rejection of queued messages with other recipients or CC/BCC. New checks include the independent Svix signature vector, tampered/stale/future webhook signatures, minimal event payloads, real local HTTP routing and asset caching, readiness, current Supabase API-key headers, expired-code/session error mapping, policy-version replay and shutdown during an active send. They cover Hebrew/English keyword routing, unknown and ambiguous topics, approved and expired directories, recipient changes, duplicate submissions, ownership checks, CSRF, input limits, model output validation and fallback, and mail retry behaviour.
 
 ## PostgreSQL
 
-All four migrations were applied to fresh disposable PostgreSQL 16 instances on 13 September. The SQL assertions passed inside a transaction that was rolled back. Checks include atomic ticket/outbox rollback, one outbox row for repeated submission, cross-student denial, API-role privileges, rate limits, exclusive job claims, recovery after lease expiry, rejection of a stale worker acknowledgement, provider-acceptance status, duplicate/out-of-order/early delivery notifications, role restrictions on operator functions, attributed handling-state updates, cascade deletion and protection of active sends during cleanup.
+All four migrations were applied to fresh disposable PostgreSQL 16 instances on 13 and 27 September. The SQL assertions passed inside a transaction that was rolled back. Checks include atomic ticket/outbox rollback, one outbox row for repeated submission, cross-student denial, API-role privileges, rate limits, exclusive job claims, recovery after lease expiry, rejection of a stale worker acknowledgement, provider-acceptance status, duplicate/out-of-order/early delivery notifications, role restrictions on operator functions, attributed handling-state updates, cascade deletion and protection of active sends during cleanup.
 
-This validates the SQL behaviour on PostgreSQL. The external Supabase Auth service, hosted PostgREST RPC deployment and organizational infrastructure were not integration-tested with live credentials.
+The four migrations were also applied to the designated empty hosted Supabase staging project on 27 September. A read-only operations query confirmed schema version 4 and an empty queue. Catalog checks confirmed RLS on all six gateway tables, service-role table access and no anonymous/authenticated table or function access. The six informational no-policy advisor findings are intentional for this server-only design; see [staging setup](staging.md). The external Auth, PostgREST, SMTP and application deployment still require an end-to-end integration test.
 
 ## Browser
 
 A fresh headless Chrome profile tested Hebrew guided routing, a payment-block university handoff, retained description when going back, request review, draft download, keyword suggestions, English switching, mobile horizontal overflow and public topic links. Screenshots were inspected at desktop and mobile sizes.
 
-The updated mocked-live test exercised incorrect-code recovery, expired-session re-verification without resubmitting a ticket, reviewed notice versions, confirmed delivery states, sign-out, mobile receipt layout, and the approved recipient display, OTP interface, verified-email gating, failed submission, retry with the same idempotency key, receipt and status refresh. All external service responses were mocked.
+The updated mocked-live test exercised incorrect-code recovery, expired-session re-verification without resubmitting a ticket, reviewed notice versions, confirmed delivery states, sign-out, mobile receipt layout, and the approved recipient display, OTP interface, verified-email gating, failed submission, retry with the same idempotency key, receipt and status refresh. All external service responses were mocked. The test was rerun on 27 September and also verified the staging notice in Hebrew and English at mobile width.
 
 A separate real local model test used the AI-enabled preview and a synthetic Hebrew housing issue. The interface displayed a validated Gemma topic suggestion. The in-app browser integration could not initialize; these checks used a separate local browser process.
 
@@ -44,7 +44,7 @@ Raw results: `artifacts/evaluation-model.json`, `artifacts/evaluation-keywords.j
 
 ## Outstanding external validation
 
-Before live operation: set up the accounts and sending domain; review the provisional receiving arrangement and privacy policy; validate real Supabase Auth, hosted RPCs, SMTP delivery and signed provider notifications in staging; assign staff and alert ownership; configure mailbox/Auth/backup data retention separately; test sensitive handling procedures, accessibility and representative hosted capacity. Exact university department contacts and independent Hebrew model examples still require external input. No real student data, live provider credentials or externally delivered messages were used.
+Before live operation: activate hosting, configure the sending domain and runtime keys; review the provisional receiving arrangement and privacy policy; validate real Supabase Auth, hosted RPCs, SMTP delivery and signed provider notifications in staging; assign staff and alert ownership; configure mailbox/Auth/backup data retention separately; test sensitive handling procedures, accessibility and representative hosted capacity. Exact university department contacts and independent Hebrew model examples still require external input. No real student data, live provider credentials or externally delivered messages were used.
 
 ## Performance smoke check
 
